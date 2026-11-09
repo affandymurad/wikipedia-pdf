@@ -1,0 +1,7 @@
+﻿{
+  "hosting": {
+    "site": "wikipedia-pdf",
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  }
+}

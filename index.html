@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikipedia-PDF — Artikel Wikipedia ke PDF yang tertata</title>
+    <meta name="description" id="metaDesc" content="Ubah artikel Wikipedia menjadi PDF bertata letak rapi dengan Daftar Isi berlink, gambar, tabel, dan referensi — bukan hasil cetak halaman.">
+    <style>
+        :root {
+            --bg: #f3f6fc; --surface: #ffffff; --ink: #0c1a36; --muted: #526080; --line: #dde4f1;
+            --brand: #2d4f9c; --brand-2: #5278d0; --brand-text: #2d4f9c; --soft: #eaeff9;
+            --ok: #198754; --ok-bg: #d9efe4; --warn: #b45309; --warn-bg: #fff3e0; --danger: #b42318; --danger-bg: #fdecea;
+            --radius: 24px; --radius-sm: 12px;
+            --shadow: 0 1px 2px rgba(12, 26, 54, .04), 0 12px 32px rgba(33, 58, 122, .09);
+            --ring: color-mix(in srgb, var(--brand-2) 38%, transparent);
+            color-scheme: light;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #080f20; --surface: #0f1a33; --ink: #e8eefc; --muted: #9aaccc; --line: #213056; --soft: #15244a;
+                --brand: #3f66bf; --brand-2: #6d93e8; --brand-text: #8fb1f2;
+                --ok: #4ade80; --ok-bg: #12291d; --warn: #ffc27a; --warn-bg: #3a2a10; --danger: #fca5a5; --danger-bg: #3b1616;
+                --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 14px 36px rgba(0, 0, 0, .38);
+                color-scheme: dark;
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; color: var(--ink);
+            background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--brand-2) 16%, transparent), transparent 70%) no-repeat top center / 100% 520px, var(--bg);
+            font: 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased;
+        }
+        :focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; border-radius: 6px; }
+        a { color: var(--brand-text); text-underline-offset: 3px; }
+        .wrap { width: min(860px, 100% - 32px); margin-inline: auto; }
+
+        header { border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: blur(12px); }
+        .nav { display: flex; align-items: center; gap: 12px; height: 60px; }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; letter-spacing: -.02em; }
+        .logo i { width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(140deg, var(--brand), var(--brand-2)); display: grid; place-items: center; color: #fff; font: 800 15px/1 Georgia, serif; font-style: normal; }
+        .nav span.tag { margin-left: auto; font-size: 13px; color: var(--muted); }
+        .langsw { display: inline-flex; padding: 3px; gap: 2px; background: var(--soft); border: 1px solid var(--line); border-radius: 999px; }
+        .langsw button { border: 0; background: transparent; color: var(--muted); font: 700 12.5px inherit; padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+        .langsw button[aria-pressed="true"] { background: var(--brand); color: #fff; }
+
+        .hero { padding: 44px 0 22px; }
+        .badge { display: inline-block; background: var(--soft); color: var(--brand-text); border: 1px solid color-mix(in srgb, var(--brand-2) 22%, transparent); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 600; }
+        h1 { font-size: clamp(28px, 5vw, 44px); line-height: 1.1; margin: 16px 0 12px; letter-spacing: -.03em; }
+        .lead { font-size: 17px; color: var(--muted); margin: 0; max-width: 40em; }
+
+        .qnote { margin-top: 18px; padding: 14px 16px; background: var(--soft); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 13.5px; color: var(--muted); max-width: 40em; }
+        .qnote summary { cursor: pointer; font-weight: 700; color: var(--ink); font-size: 14px; list-style-position: inside; }
+        .qnote[open] summary { margin-bottom: 10px; }
+        .qnote b { color: var(--ink); }
+        .qnote p { margin: 0 0 8px; }
+        .qnote ul { margin: 0; padding-left: 20px; }
+        .qnote code { font-size: 12.5px; word-break: break-all; color: var(--brand-text); }
+        .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; margin-bottom: 20px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+        .card.main::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--brand), var(--brand-2)); }
+        label.step { display: block; font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+        .info { font-size: 13.5px; color: var(--muted); margin: 0 0 12px; }
+        input[type="url"], input[type="text"], select {
+            width: 100%; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); font: inherit; font-size: 15px;
+            background: color-mix(in srgb, var(--soft) 45%, var(--surface)); color: var(--ink);
+        }
+        input:focus, select:focus { outline: none; border-color: var(--brand-2); box-shadow: 0 0 0 4px var(--ring); background: var(--surface); }
+        #urlStatus { min-height: 22px; margin: 8px 2px 0; font-size: 13.5px; }
+        #urlStatus.ok { color: var(--ok); }
+        #urlStatus.bad { color: var(--danger); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 22px 0; }
+        .grid label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+        .check { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; margin: 8px 0; cursor: pointer; }
+        .check input { width: 18px; height: 18px; accent-color: var(--brand); margin-top: 3px; flex: none; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 22px; border: none; border-radius: 14px; font: 700 16px inherit; cursor: pointer; color: #fff; background: linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: 0 10px 24px rgba(45, 79, 156, .3); text-decoration: none; }
+        .btn:hover:not(:disabled) { filter: brightness(1.07); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+        .btn.block { width: 100%; margin-top: 8px; }
+        .btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: none; padding: 11px 18px; font-size: 14.5px; }
+        .btn.ghost:hover { border-color: var(--brand-2); background: var(--soft); filter: none; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .bar { height: 10px; border-radius: 999px; background: var(--soft); overflow: hidden; margin: 12px 0 8px; }
+        .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--brand), var(--brand-2)); transition: width .2s; }
+        #stage { font-weight: 600; }
+        #log { margin: 12px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); max-height: 150px; overflow: auto; }
+        #log li { padding: 2px 0; }
+        .banner { border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14.5px; margin-bottom: 20px; }
+        .banner.err { background: var(--danger-bg); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); }
+        .banner.warn { background: var(--warn-bg); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 6px 0 18px; }
+        .stats div { background: var(--soft); border-radius: 14px; padding: 12px 14px; }
+        .stats b { display: block; font-size: 22px; letter-spacing: -.02em; }
+        .stats span { font-size: 12.5px; color: var(--muted); }
+        ul.notes { color: var(--muted); font-size: 13.5px; padding-left: 20px; margin: 4px 0 0; }
+        .hidden { display: none !important; }
+        footer { padding: 14px 0 40px; font-size: 13px; color: var(--muted); }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="wrap nav">
+            <div class="logo"><i>W</i> Wikipedia-PDF</div>
+            <span class="tag" data-i18n="tag">prototipe · jsPDF</span>
+            <div class="langsw" id="langsw" role="group" aria-label="Bahasa / Language"><button type="button" data-lang="id" aria-pressed="true">ID</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <section class="hero">
+            <span class="badge" data-i18n="badge">Bukan cetak halaman</span>
+            <h1 data-i18n="h1">Artikel Wikipedia jadi PDF yang tertata.</h1>
+            <p class="lead" data-i18n="lead">Tempel satu URL Wikipedia. PDF disusun langsung dari isi artikel: Daftar Isi berlink ke subjudul di dalam PDF, gambar dengan keterangan, tabel, referensi, dan halaman lisensi.</p>
+            <details class="qnote">
+                <summary data-i18n="qTitle">Query</summary>
+                <div data-i18n-html="qNote"></div>
+            </details>
+        </section>
+
+        <div id="errorBox" class="banner err hidden" role="alert"></div>
+
+        <form id="form" class="card main" autocomplete="off" novalidate>
+            <label class="step" for="url" data-i18n="urlLabel">URL artikel Wikipedia</label>
+            <p class="info" data-i18n-html="urlInfo">Semua bahasa didukung selama domainnya <code>*.wikipedia.org</code>. Parameter <code>oldid</code> dipakai untuk revisi tertentu.</p>
+            <input id="url" type="url" inputmode="url" placeholder="Tempel URL artikel, mis. https://id.wikipedia.org/wiki/Indonesia" data-i18n-placeholder="urlPh" spellcheck="false">
+            <div id="urlStatus" aria-live="polite"></div>
+
+
+            <label class="check"><input id="optCite" type="checkbox" checked><span data-i18n-html="optCite">Penanda <b>[1]</b> melompat ke daftar referensi di dalam PDF</span></label>
+            <label class="check"><input id="optContrib" type="checkbox" checked><span data-i18n="optContrib">Sertakan daftar kontributor teks dan lisensi gambar di halaman terakhir</span></label>
+
+            <button id="go" class="btn block" type="submit" data-i18n="go">Buat PDF</button>
+        </form>
+
+        <section id="progressCard" class="card hidden" aria-live="polite">
+            <div id="stage" data-i18n="stPrep">Menyiapkan…</div>
+            <div class="bar"><i id="barFill"></i></div>
+            <div class="row"><button id="cancel" class="btn ghost" type="button" data-i18n="cancel">Batal</button></div>
+            <ul id="log"></ul>
+        </section>
+
+        <section id="resultCard" class="card hidden">
+            <h2 id="resTitle" style="margin:0 0 14px;font-size:22px;letter-spacing:-.02em"></h2>
+            <div class="stats" id="stats"></div>
+            <div class="row">
+                <a id="dl" class="btn" download="wikipedia.pdf" data-i18n="dl">Unduh PDF</a>
+                <a id="open" class="btn ghost" target="_blank" rel="noopener" data-i18n="open">Buka pratinjau</a>
+            </div>
+            <ul class="notes" id="resNotes"></ul>
+        </section>
+    </main>
+
+    <footer class="wrap" data-i18n="footer">Teks Wikipedia berlisensi CC BY-SA 4.0. Atribusi dan daftar kontributor disertakan di PDF. Prototipe: tanpa server, semua diproses di peramban.</footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.3/jspdf.plugin.autotable.min.js"></script>
+    <script>
+    (() => {
+        'use strict';
+
+        /* =====================================================================
+           Konstanta
+           ===================================================================== */
+        // Font sama dengan Wikirekap (Roboto regular + bold), disajikan dari folder Wikirekap
+        const FONT_FILES = { normal: 'fonts/Roboto-Regular.ttf', bold: 'fonts/Roboto-Bold.ttf' };
+        // Titik kode yang ada di font (sama dengan Wikirekap); selain ini digambar lewat canvas
+        const GLYPH_RANGES = [[0x20,0x7E],[0xA0,0x2AF],[0x300,0x377],[0x37A,0x37F],[0x384,0x38A],[0x38C,0x38C],[0x38E,0x3A1],[0x3A3,0x3E1],[0x3F0,0x52F],[0x1E00,0x1F15],[0x1F18,0x1F1D],[0x1F20,0x1F45],[0x1F48,0x1F4D],[0x1F50,0x1F57],[0x1F59,0x1F59],[0x1F5B,0x1F5B],[0x1F5D,0x1F5D],[0x1F5F,0x1F7D],[0x1F80,0x1FB4],[0x1FB6,0x1FC4],[0x1FC6,0x1FD3],[0x1FD6,0x1FDB],[0x1FDD,0x1FEF],[0x1FF2,0x1FF4],[0x1FF6,0x1FFE],[0x2000,0x2027],[0x202F,0x205F],[0x20A0,0x20BE],[0x2100,0x2101],[0x2103,0x2103],[0x2105,0x2106],[0x2109,0x2109],[0x2113,0x2113],[0x2116,0x2117],[0x211E,0x2123],[0x2125,0x2126],[0x212A,0x212B],[0x212E,0x212E],[0x2132,0x2132],[0x213B,0x213B],[0x214D,0x214D],[0x214F,0x214F],[0x2191,0x2191],[0x2193,0x2193],[0x2202,0x2202],[0x2206,0x2206],[0x220F,0x220F],[0x2211,0x2212],[0x221A,0x221A],[0x221E,0x221E],[0x222B,0x222B],[0x2248,0x2248],[0x2260,0x2260],[0x2264,0x2265],[0x25CA,0x25CA]];
+        const LATIN1_RANGES = [[0x20, 0x7E], [0xA0, 0xFF]];
+
+        const APP_NAME = 'Wikipedia-PDF', APP_URL = 'https://wikipedia-pdf.web.app/';
+        const AUTHOR_NAME = 'Affandy Murad', AUTHOR_URL = 'https://meta.wikimedia.org/wiki/User:Affandy_Murad';
+        const PT = 25.4 / 72;                       // 1 pt dalam mm
+        const PAGE = { w: 210, h: 297, ml: 20, mr: 20, mt: 25, mb: 22 };
+        const CW = PAGE.w - PAGE.ml - PAGE.mr;      // lebar kolom isi
+        const BODY = 9.6, LEAD = 1.5;
+        const C = {
+            ink: [12, 26, 54], muted: [96, 109, 138], faint: [150, 160, 182], line: [214, 221, 236],
+            brand: [45, 79, 156], link: [31, 78, 170], soft: [238, 242, 250], head3: [28, 51, 102], white: [255, 255, 255]
+        };
+        const CANVAS_PX = 8;                        // piksel per mm untuk teks canvas
+        const CANVAS_FAMILY = '"Segoe UI", "Noto Sans", "Noto Sans CJK JP", "Yu Gothic", "Hiragino Sans", "Malgun Gothic", "Microsoft YaHei", "Noto Sans Arabic", "Noto Sans Thai", "Noto Sans Devanagari", sans-serif';
+        const NON_LATIN_LANGS = new Set(['ja', 'zh', 'ko', 'ar', 'fa', 'he', 'th', 'hi', 'bn', 'ta', 'te', 'ur', 'ml', 'kn', 'mr', 'ne', 'my', 'km', 'lo', 'ka', 'hy', 'am', 'si', 'zh-yue', 'zh-classical', 'wuu', 'ckb', 'ps', 'sd']);
+
+        const L10N = {
+            id: {
+                lang: 'id-ID', wiki: 'Wikipedia', contents: 'Daftar Isi', source: 'Sumber', revision: 'Revisi', retrieved: 'Diambil', license: 'Lisensi',
+                licenseVal: 'Teks: CC BY-SA 4.0, kecuali dinyatakan lain', pageWord: 'Halaman', ofWord: 'dari', takenFrom: 'Diambil dari Wikipedia',
+                attrTitle: 'Sumber, kontributor, dan lisensi', textSrc: 'Sumber teks',
+                textSrcBody: 'Teks artikel ini berasal dari Wikipedia dan tersedia di bawah lisensi Creative Commons Atribusi-BerbagiSerupa 4.0 (CC BY-SA 4.0), kecuali dinyatakan lain. Daftar lengkap penulis tersedia di riwayat halaman:',
+                contributors: 'Kontributor teks', contribMore: 'dan {n} kontributor lain (lihat riwayat halaman)', contribAnon: '{n} kontributor anonim',
+                images: 'Gambar', imagesBody: 'Berkas gambar dimuat dari Wikimedia. Tiap gambar memiliki lisensinya sendiri; ketuk judul berkas untuk melihat halaman aslinya.',
+                madeWith: 'PDF ini disusun oleh {app} langsung dari isi artikel, bukan hasil cetak halaman web. Dibuat oleh {author}.', figFail: '[gambar tidak dapat dimuat]', infobox: 'Ringkasan', unknown: 'tidak diketahui'
+            },
+            en: {
+                lang: 'en-GB', wiki: 'Wikipedia', contents: 'Contents', source: 'Source', revision: 'Revision', retrieved: 'Retrieved', license: 'License',
+                licenseVal: 'Text: CC BY-SA 4.0 unless otherwise noted', pageWord: 'Page', ofWord: 'of', takenFrom: 'Retrieved from Wikipedia',
+                attrTitle: 'Sources, contributors, and licenses', textSrc: 'Text source',
+                textSrcBody: 'The text of this article comes from Wikipedia and is available under the Creative Commons Attribution-ShareAlike 4.0 license (CC BY-SA 4.0) unless otherwise noted. The full list of authors is available in the page history:',
+                contributors: 'Text contributors', contribMore: 'and {n} more contributors (see page history)', contribAnon: '{n} anonymous contributors',
+                images: 'Images', imagesBody: 'Image files are loaded from Wikimedia. Each image has its own license; follow the file title to see its original page.',
+                madeWith: 'This PDF was built by {app} directly from the article content, not printed from the web page. Made by {author}.', figFail: '[image could not be loaded]', infobox: 'Summary', unknown: 'unknown'
+            }
+        };
+
+        /* =====================================================================
+           Antarmuka dua bahasa (ID / EN); isi PDF mengikuti bahasa artikel lewat L10N di atas
+           ===================================================================== */
+        const UI = {
+            id: {
+                title: 'Wikipedia-PDF — Artikel Wikipedia ke PDF yang tertata',
+                metaDesc: 'Ubah artikel Wikipedia menjadi PDF bertata letak rapi dengan Daftar Isi berlink, gambar, tabel, dan referensi — bukan hasil cetak halaman.',
+                tag: 'prototipe · jsPDF', badge: 'Bukan cetak halaman', h1: 'Artikel Wikipedia jadi PDF yang tertata.',
+                lead: 'Tempel satu URL Wikipedia. PDF disusun langsung dari isi artikel: Daftar Isi berlink ke subjudul di dalam PDF, gambar dengan keterangan, tabel, referensi, dan halaman lisensi.',
+                qNote: '<p><b>Query:</b> URL bisa dikirim lewat alamat halaman ini, jadi kolom terisi otomatis dan PDF langsung dibuat.</p><ul><li><code>?url=https://id.wikipedia.org/wiki/Indonesia</code></li><li><code>&amp;oldid=123456</code> untuk revisi tertentu</li><li><code>&amp;auto=0</code> hanya mengisi kolom, tanpa langsung membuat PDF</li><li><code>&amp;lang=id</code> atau <code>&amp;lang=en</code> untuk bahasa antarmuka (default: en)</li></ul><p style="margin-top:10px"><b>Abstract Wikipedia</b> (<code>?url=https://abstract.wikipedia.org/wiki/Q252</code>)</p><ul><li>Hanya halaman Q-id; tidak ada subjudul bertingkat, tabel, infobox, maupun referensi, dan <code>oldid</code> tidak didukung. Isinya hanya paragraf dan gambar yang sudah dihasilkan Abstract Wikipedia, jadi PDF jauh lebih pendek dari artikel biasa.</li><li>Bahasa teks diatur dengan <code>?uselang=</code> <em>di dalam</em> URL abstract (default <code>en</code>), terpisah dari <code>&amp;lang=</code> yang hanya untuk antarmuka. Contoh: <code>?url=https://abstract.wikipedia.org/wiki/Q252%3Fuselang%3Did</code></li><li>Teks dibuat oleh server Abstract Wikipedia dari fungsi Wikifunctions, bukan oleh Wikipedia-PDF. Bahasa selain English sering belum lengkap atau kosong ("Content pending"). Jika tidak ada teks sama sekali dalam bahasa yang diminta, PDF otomatis memakai <b>English</b> (dicatat di log), dan bahasa PDF mengikuti bahasa yang dipakai.</li><li>Bahasa yang dikenali: en, id, ms, jv, su, tl, ar, fa, he, tr, hi, th, vi, zh, ja, ko, es, fr, pt, it, ca, ro, de, nl, sv, da, no, fi, ru, uk, pl, cs, hu, el. Kode lain dicari otomatis di Wikifunctions.</li><li>Layanan bersifat internal dan kadang membatasi permintaan (HTTP 429), sehingga sebagian bagian bisa terlewat; coba lagi beberapa saat kemudian.</li></ul>',
+                qTitle: 'Parameter query (opsional)',
+                urlPh: 'Tempel URL artikel, mis. https://id.wikipedia.org/wiki/Indonesia',
+                urlLabel: 'URL artikel Wikipedia',
+                urlInfo: 'Semua bahasa didukung selama domainnya <code>*.wikipedia.org</code>. Parameter <code>oldid</code> dipakai untuk revisi tertentu. Edisi khusus <b>Abstract Wikipedia</b>: tempel <code>abstract.wikipedia.org/wiki/Q252</code>, bahasa teks lewat <code>?uselang=id</code> (jika belum tersedia, dipakai English).',
+                optCite: 'Penanda <b>[1]</b> melompat ke daftar referensi di dalam PDF',
+                optContrib: 'Sertakan daftar kontributor teks dan lisensi gambar di halaman terakhir',
+                go: 'Buat PDF', cancel: 'Batal', dl: 'Unduh PDF', open: 'Buka pratinjau',
+                footer: 'Teks Wikipedia berlisensi CC BY-SA 4.0. Atribusi dan daftar kontributor disertakan di PDF. Prototipe: tanpa server, semua diproses di peramban.',
+                errEmpty: 'Tempel URL artikel Wikipedia terlebih dahulu.', errOnlyWiki: 'Hanya URL Wikipedia (*.wikipedia.org) yang didukung.',
+                errBadUrl: 'URL tidak valid.', errPortal: 'Tempel URL artikel, bukan halaman utama atau portal Wikipedia.',
+                errSubdomain: 'Subdomain ini bukan Wikipedia berbahasa. Tempel URL artikel dari Wikipedia bahasa tertentu.',
+                errMainSpecial: 'Tempel URL artikel, bukan halaman utama atau halaman khusus.', errNotFound: 'Artikel tidak ditemukan.',
+                errSpecial: 'Tempel URL artikel, bukan halaman khusus.',
+                errNs: 'Tempel URL artikel (ruang nama utama), bukan halaman Pembicaraan, Pengguna, Kategori, atau halaman khusus.',
+                errDisamb: 'Ini halaman disambiguasi, bukan artikel. Pilih salah satu artikel tujuannya.',
+                errAbsId: 'URL Abstract Wikipedia harus berupa halaman Q-id, mis. abstract.wikipedia.org/wiki/Q1.',
+                errAbsEmpty: 'Halaman Abstract Wikipedia ini belum punya isi.',
+                errAbsNoText: 'Abstract Wikipedia belum dapat menghasilkan teks untuk topik ini dalam bahasa "{l}".',
+                logAbsFallback: 'Teks bahasa "{l}" belum tersedia di Abstract Wikipedia untuk topik ini; memakai English.',
+                errAbsLang: 'Bahasa "{l}" tidak dikenali oleh Wikifunctions.',
+                detectedAbs: 'Terdeteksi: Abstract Wikipedia ({lang})',
+                errJsPdf: 'Pustaka jsPDF gagal dimuat. Periksa koneksi internet.',
+                errCancelled: 'Pembuatan PDF dibatalkan.', errNetwork: 'Tidak dapat menghubungi Wikipedia. Periksa koneksi internet lalu coba lagi.',
+                errGeneric: 'Terjadi kesalahan: {m}',
+                detected: 'Terdeteksi: Wikipedia {lang}', detectedRev: ' · revisi {n}',
+                stPrep: 'Menyiapkan…', stCheck: 'Memeriksa artikel…', stDownload: 'Mengunduh isi artikel…', stParse: 'Menguraikan struktur artikel…',
+                stFonts: 'Memuat font…', stImages: 'Mengunduh gambar ({d}/{n})…', stContrib: 'Mengambil kontributor dan lisensi gambar…',
+                stLayout: 'Menyusun halaman…', stFinish: 'Menyelesaikan Daftar Isi dan tautan…',
+                logStruct: 'Struktur: {h} subjudul, {i} gambar, {t} tabel.',
+                logFont: 'Font Roboto gagal dimuat, memakai font bawaan (karakter non-Latin-1 digambar sebagai gambar).',
+                imgFail: '{n} gambar gagal dimuat dan diganti kotak penanda.',
+                logNonLatin: 'Bahasa beraksara non-Latin: teks digambar sebagai gambar sehingga tidak bisa dicari dan file lebih besar.',
+                sPages: 'halaman', sHeads: 'subjudul', sImages: 'gambar', sSize: 'ukuran', sTime: 'waktu', secUnit: 'dtk',
+                noteToc: 'Daftar Isi memakai {n} halaman; klik tiap baris untuk melompat ke subjudul di dalam PDF.'
+            },
+            en: {
+                title: 'Wikipedia-PDF — Wikipedia articles as well-structured PDFs',
+                metaDesc: 'Turn a Wikipedia article into a neatly laid-out PDF with a linked table of contents, images, tables and references — not a page printout.',
+                tag: 'prototype · jsPDF', badge: 'Not a page printout', h1: 'Wikipedia articles as well-structured PDFs.',
+                lead: 'Paste one Wikipedia URL. The PDF is built directly from the article content: a table of contents linking to headings inside the PDF, images with captions, tables, references, and a license page.',
+                qNote: '<p><b>Query:</b> the URL can be passed in this page\'s address, so the field is filled in and the PDF is created right away.</p><ul><li><code>?url=https://en.wikipedia.org/wiki/Indonesia</code></li><li><code>&amp;oldid=123456</code> for a specific revision</li><li><code>&amp;auto=0</code> only fills the field, without creating the PDF</li><li><code>&amp;lang=id</code> or <code>&amp;lang=en</code> for the interface language (default: en)</li></ul><p style="margin-top:10px"><b>Abstract Wikipedia</b> (<code>?url=https://abstract.wikipedia.org/wiki/Q252</code>)</p><ul><li>Q-id pages only; no nested headings, tables, infoboxes or references, and <code>oldid</code> is not supported. The content is just the paragraphs and images Abstract Wikipedia has generated, so the PDF is much shorter than a regular article.</li><li>The text language is set with <code>?uselang=</code> <em>inside</em> the abstract URL (default <code>en</code>), separate from <code>&amp;lang=</code>, which only controls the interface. Example: <code>?url=https://abstract.wikipedia.org/wiki/Q252%3Fuselang%3Did</code></li><li>The text is generated by the Abstract Wikipedia server from Wikifunctions functions, not by Wikipedia-PDF. Languages other than English are often incomplete or empty ("Content pending"). If there is no text at all in the requested language, the PDF automatically uses <b>English</b> (noted in the log), and the PDF language follows the language actually used.</li><li>Recognised languages: en, id, ms, jv, su, tl, ar, fa, he, tr, hi, th, vi, zh, ja, ko, es, fr, pt, it, ca, ro, de, nl, sv, da, no, fi, ru, uk, pl, cs, hu, el. Other codes are looked up in Wikifunctions automatically.</li><li>The service is internal and sometimes rate-limits requests (HTTP 429), so some sections may be skipped; try again a little later.</li></ul>',
+                qTitle: 'Query parameters (optional)',
+                urlPh: 'Paste an article URL, e.g. https://en.wikipedia.org/wiki/Indonesia',
+                urlLabel: 'Wikipedia article URL',
+                urlInfo: 'Every language is supported as long as the domain is <code>*.wikipedia.org</code>. The <code>oldid</code> parameter is used for a specific revision. Special <b>Abstract Wikipedia</b> edition: paste <code>abstract.wikipedia.org/wiki/Q252</code>, with the text language set by <code>?uselang=id</code> (English is used if it is not available yet).',
+                optCite: 'The <b>[1]</b> markers jump to the reference list inside the PDF',
+                optContrib: 'Include the list of text contributors and image licenses on the last page',
+                go: 'Create PDF', cancel: 'Cancel', dl: 'Download PDF', open: 'Open preview',
+                footer: 'Wikipedia text is licensed under CC BY-SA 4.0. Attribution and the contributor list are included in the PDF. Prototype: no server, everything is processed in the browser.',
+                errEmpty: 'Paste a Wikipedia article URL first.', errOnlyWiki: 'Only Wikipedia URLs (*.wikipedia.org) are supported.',
+                errBadUrl: 'Invalid URL.', errPortal: 'Paste an article URL, not the Wikipedia main page or portal.',
+                errSubdomain: 'This subdomain is not a Wikipedia language edition. Paste an article URL from a specific language edition.',
+                errMainSpecial: 'Paste an article URL, not the main page or a special page.', errNotFound: 'Article not found.',
+                errSpecial: 'Paste an article URL, not a special page.',
+                errNs: 'Paste an article URL (main namespace), not a Talk, User, Category or special page.',
+                errDisamb: 'This is a disambiguation page, not an article. Pick one of its target articles.',
+                errAbsId: 'An Abstract Wikipedia URL must point to a Q-id page, e.g. abstract.wikipedia.org/wiki/Q1.',
+                errAbsEmpty: 'This Abstract Wikipedia page has no content yet.',
+                errAbsNoText: 'Abstract Wikipedia cannot generate text for this topic in "{l}" yet.',
+                logAbsFallback: 'No "{l}" text is available on Abstract Wikipedia for this topic yet; using English.',
+                errAbsLang: 'The language "{l}" is not recognised by Wikifunctions.',
+                detectedAbs: 'Detected: Abstract Wikipedia ({lang})',
+                errJsPdf: 'The jsPDF library failed to load. Check your internet connection.',
+                errCancelled: 'PDF creation was cancelled.', errNetwork: 'Could not reach Wikipedia. Check your internet connection and try again.',
+                errGeneric: 'Something went wrong: {m}',
+                detected: 'Detected: Wikipedia {lang}', detectedRev: ' · revision {n}',
+                stPrep: 'Preparing…', stCheck: 'Checking the article…', stDownload: 'Downloading article content…', stParse: 'Parsing the article structure…',
+                stFonts: 'Loading fonts…', stImages: 'Downloading images ({d}/{n})…', stContrib: 'Fetching contributors and image licenses…',
+                stLayout: 'Laying out pages…', stFinish: 'Finishing the table of contents and links…',
+                logStruct: 'Structure: {h} headings, {i} images, {t} tables.',
+                logFont: 'The Roboto font failed to load; using the built-in font (characters outside Latin-1 are drawn as images).',
+                imgFail: '{n} images failed to load and were replaced by placeholder boxes.',
+                logNonLatin: 'Non-Latin script: the text is drawn as images, so it cannot be searched and the file is larger.',
+                sPages: 'pages', sHeads: 'headings', sImages: 'images', sSize: 'size', sTime: 'time', secUnit: 's',
+                noteToc: 'The table of contents spans {n} page(s); click any line to jump to the heading inside the PDF.'
+            }
+        };
+        // Urutan: ?lang= (id/en) > pilihan tersimpan > default English
+        let uiLang = 'en';
+        try { const sv = localStorage.getItem('wikipedia-pdf-lang'); if (sv === 'id' || sv === 'en') uiLang = sv; } catch (e) { }
+        try { const ql = (new URLSearchParams(location.search).get('lang') || '').toLowerCase(); if (ql === 'id' || ql === 'en') uiLang = ql; } catch (e) { }
+        const tr = (k, v) => {
+            const s = (UI[uiLang][k] !== undefined ? UI[uiLang][k] : UI.id[k]) || k;
+            return v ? s.replace(/\{(\w+)\}/g, (m, x) => (v[x] !== undefined ? v[x] : m)) : s;
+        };
+
+        // pesan galat pengguna menyimpan kunci agar bisa ditampilkan ulang saat bahasa diganti
+        class UserError extends Error { constructor(key, vars) { super(tr(key, vars)); this.key = key; this.vars = vars; } }
+
+        /* =====================================================================
+           Validasi URL: hanya *.wikipedia.org
+           ===================================================================== */
+        const LANG_RE = /^[a-z]{2,12}(?:-[a-z0-9]{2,12}){0,3}$/;
+        const BLOCKED_SUBDOMAINS = new Set(['www', 'm', 'test', 'test2', 'abstract', 'api', 'upload', 'login', 'beta', 'stable', 'static', 'internal']);
+
+        // Edisi Abstract Wikipedia: halaman berupa Q-id (abstract.wikipedia.org/wiki/Q1); bahasa isi dari ?uselang=, default en
+        function parseAbstractUrl(u) {
+            let title = '';
+            try {
+                const p = u.pathname;
+                if (p.startsWith('/wiki/')) title = decodeURIComponent(p.slice(6));
+                else if (p === '/w/index.php' || p === '/index.php' || p === '/') title = u.searchParams.get('title') || '';
+            } catch (e) { throw new UserError('errBadUrl'); }
+            title = title.trim().toUpperCase();
+            if (!/^Q[1-9]\d{0,11}$/.test(title)) throw new UserError('errAbsId');
+            const ul = (u.searchParams.get('uselang') || '').toLowerCase();
+            const lang = /^[a-z]{2,3}$/.test(ul) ? ul : 'en';
+            return { abstract: true, lang, host: 'abstract.wikipedia.org', api: 'https://abstract.wikipedia.org/w/api.php', title, oldid: null, curid: null };
+        }
+
+        function parseWikiUrl(raw) {
+            let s = String(raw || '').trim();
+            if (!s) throw new UserError('errEmpty');
+            if (!/^https?:\/\//i.test(s)) {
+                if (s.includes('://')) throw new UserError('errOnlyWiki');
+                s = 'https://' + s;
+            }
+            let u;
+            try { u = new URL(s); } catch (e) { throw new UserError('errBadUrl'); }
+            if (u.username || u.password || u.port) throw new UserError('errBadUrl');
+            const host = u.hostname.toLowerCase();
+            if (host === 'wikipedia.org' || host === 'www.wikipedia.org') throw new UserError('errPortal');
+            const m = host.match(/^([a-z0-9-]+)(?:\.m)?\.wikipedia\.org$/);
+            if (!m) throw new UserError('errOnlyWiki');
+            const lang = m[1];
+            if (lang === 'abstract') return parseAbstractUrl(u);
+            if (!LANG_RE.test(lang) || BLOCKED_SUBDOMAINS.has(lang)) throw new UserError('errSubdomain');
+
+            let title = null, oldid = null, curid = null;
+            try {
+                const p = u.pathname;
+                if (p.startsWith('/wiki/')) title = decodeURIComponent(p.slice(6)).replace(/_/g, ' ');
+                else if (p === '/w/index.php' || p === '/index.php' || p === '/') title = (u.searchParams.get('title') || '').replace(/_/g, ' ') || null;
+                else throw new UserError('errMainSpecial');
+            } catch (e) {
+                if (e instanceof UserError) throw e;
+                throw new UserError('errBadUrl');
+            }
+            const od = u.searchParams.get('oldid'), cd = u.searchParams.get('curid');
+            if (od && /^\d{1,12}$/.test(od)) oldid = od;
+            if (cd && /^\d{1,12}$/.test(cd)) curid = cd;
+            if (title) title = title.trim();
+            if (!title && !oldid && !curid) throw new UserError('errMainSpecial');
+            // API dibangun ulang dari host yang sudah lolos validasi, bukan dari string pengguna
+            return { lang, host: `${lang}.wikipedia.org`, api: `https://${lang}.wikipedia.org/w/api.php`, title, oldid, curid };
+        }
+
+        /* =====================================================================
+           Utilitas
+           ===================================================================== */
+        const $ = id => document.getElementById(id);
+        const tick = () => new Promise(r => setTimeout(r, 0));
+        function throwIfAborted(signal) { if (signal && signal.aborted) throw new DOMException('Dibatalkan', 'AbortError'); }
+        function normId(s) { try { s = decodeURIComponent(s); } catch (e) { } return String(s).replace(/ /g, '_'); }
+
+        async function apiGet(api, params, signal) {
+            const qs = new URLSearchParams({ format: 'json', formatversion: '2', origin: '*', ...params });
+            const res = await fetch(`${api}?${qs}`, { signal });
+            if (!res.ok) throw new Error(`Wikipedia API: HTTP ${res.status}`);
+            const j = await res.json();
+            if (j.error) {
+                if (/missingtitle|nosuchpageid|nosuchrevid/.test(j.error.code)) throw new UserError('errNotFound');
+                throw new Error(`Wikipedia API: ${j.error.info || j.error.code}`);
+            }
+            return j;
+        }
+
+        function inRanges(cp, ranges) { for (const [a, b] of ranges) if (cp >= a && cp <= b) return true; return false; }
+        let activeRanges = GLYPH_RANGES;
+        const glyphCache = new Map();
+        function unsupported(str) {
+            if (/^[\x20-\x7E]*$/.test(str)) return false;
+            for (const ch of str) {
+                const cp = ch.codePointAt(0);
+                if (cp === 9 || cp === 10 || cp === 13) continue;
+                let ok = glyphCache.get(cp);
+                if (ok === undefined) { ok = inRanges(cp, activeRanges); glyphCache.set(cp, ok); }
+                if (!ok) return true;
+            }
+            return false;
+        }
+        function cleanText(s) { return String(s).replace(/[­​-‏‪-‮⁠﻿]/g, ''); }
+
+        let _colorCtx = null;
+        function parseColor(v) {
+            if (!v) return null;
+            v = String(v).trim().toLowerCase();
+            if (!v || v === 'transparent' || v === 'inherit' || v === 'initial' || v === 'none' || v.includes('gradient') || v.includes('var(')) return null;
+            if (!_colorCtx) _colorCtx = document.createElement('canvas').getContext('2d');
+            _colorCtx.fillStyle = '#010203';
+            _colorCtx.fillStyle = v;
+            const out = _colorCtx.fillStyle;
+            if (out === '#010203' && v !== '#010203') return null;
+            if (out[0] === '#') return [parseInt(out.slice(1, 3), 16), parseInt(out.slice(3, 5), 16), parseInt(out.slice(5, 7), 16)];
+            const m = out.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            return m ? [+m[1], +m[2], +m[3]] : null;
+        }
+        const lum = c => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+
+        function arrayBufferToBase64(buf) {
+            const bytes = new Uint8Array(buf);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+            return btoa(bin);
+        }
+        let fontPromise = null;
+        function loadFonts() {
+            if (!fontPromise) {
+                fontPromise = Promise.all(Object.values(FONT_FILES).map(async url => {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`Font ${url}: ${res.status}`);
+                    return arrayBufferToBase64(await res.arrayBuffer());
+                })).then(([normal, bold]) => ({ normal, bold })).catch(e => { fontPromise = null; throw e; });
+            }
+            return fontPromise;
+        }
+
+        /* =====================================================================
+           Parsing HTML artikel -> model dokumen
+           ===================================================================== */
+        const SKIP_CLASS = new Set(['mw-editsection', 'noprint', 'mw-empty-elt', 'navbox', 'navbox-inner', 'navbox-styles', 'vertical-navbox', 'sidebar', 'sistersitebox', 'sister-box', 'metadata', 'ambox', 'tmbox', 'ombox', 'cmbox', 'fmbox', 'imbox', 'mbox-small', 'mw-authority-control', 'authority-control', 'printfooter', 'catlinks', 'shortdescription', 'mw-cite-backlink', 'cite-accessibility-label', 'Inline-Template', 'portalbox', 'portal', 'side-box', 'asbox', 'toc', 'mw-toc', 'navigation-not-searchable', 'hide-when-compact', 'mw-jump-link', 'navbar', 'sidebar-navbar']);
+        const SKIP_TAG = new Set(['style', 'script', 'link', 'meta', 'noscript', 'template', 'audio', 'video', 'input', 'button', 'svg', 'map', 'form']);
+
+        function skipEl(el) {
+            if (SKIP_TAG.has(el.localName)) return true;
+            if (el.hidden) return true;
+            for (const c of el.classList) if (SKIP_CLASS.has(c) && !(c === 'sidebar' && el.localName === 'table')) return true;   // table.sidebar = kotak ringkasan (diperlakukan seperti infobox)
+            const st = el.getAttribute('style');
+            if (st && /display\s*:\s*none/i.test(st)) return true;
+            if (el.id === 'toc') return true;
+            return false;
+        }
+
+        function resolveHref(href, host) {
+            if (!href) return null;
+            href = href.trim();
+            if (href.startsWith('//')) return 'https:' + href;
+            if (href.startsWith('./')) return `https://${host}/wiki/${href.slice(2)}`;
+            if (href.startsWith('/')) return `https://${host}${href}`;
+            if (/^(https?:|mailto:)/i.test(href)) return href;
+            return null;
+        }
+
+        class Parser {
+            constructor(html, ctx) {
+                this.ctx = ctx;                       // { host }
+                this.doc = new DOMParser().parseFromString(html, 'text/html');
+                this.blocks = [];
+                this.images = new Map();              // src -> entry
+                this.pendingInfobox = [];
+                this.seenHeading = false;
+                this.counters = [0, 0, 0, 0, 0];     // h2..h6
+                this.headingSeq = 0;
+            }
+
+            /* ---------- inline ---------- */
+            addText(out, text, st) {
+                text = cleanText(text).replace(/[ \t\r\n\f]+/g, ' ');
+                if (!text) return;
+                out.push({ text, b: st.b, i: st.i, sup: st.sup, sub: st.sub, small: st.small, href: st.href, int: st.int });
+            }
+
+            collect(node, st, out) {
+                for (const ch of node.childNodes) {
+                    if (ch.nodeType === 3) { this.addText(out, ch.nodeValue, st); continue; }
+                    if (ch.nodeType !== 1 || skipEl(ch)) continue;
+                    const tag = ch.localName;
+                    if (tag === 'br') { out.push({ br: true }); continue; }
+                    if (tag === 'img') {
+                        if (/mwe-math/.test(ch.className)) { const alt = (ch.getAttribute('alt') || '').replace(/^\{\\displaystyle\s*/, '').replace(/\}\s*$/, '').trim(); if (alt) this.addText(out, alt, { ...st, i: true }); }
+                        continue;
+                    }
+                    if (ch.classList.contains('mwe-math-element')) {
+                        const an = ch.querySelector('annotation');
+                        const im = ch.querySelector('img');
+                        const t = (an ? an.textContent : (im ? im.getAttribute('alt') : '') || '').replace(/^\s*\{\\displaystyle\s*/, '').replace(/\}\s*$/, '').trim();
+                        if (t) this.addText(out, t, { ...st, i: true });
+                        continue;
+                    }
+                    if ((tag === 'sup' || tag === 'span') && (ch.classList.contains('reference') || ch.classList.contains('mw-ref'))) {
+                        const a = ch.querySelector('a[href^="#"]');
+                        const t = (a ? a.textContent : ch.textContent).replace(/\s+/g, ' ').trim();
+                        if (t) out.push({ text: t, sup: true, cite: true, int: a ? a.getAttribute('href').slice(1) : null });
+                        continue;
+                    }
+                    const s = { ...st };
+                    switch (tag) {
+                        case 'b': case 'strong': case 'th': s.b = true; break;
+                        case 'i': case 'em': case 'cite': case 'dfn': case 'var': s.i = true; break;
+                        case 'sup': s.sup = true; break;
+                        case 'sub': s.sub = true; break;
+                        case 'small': s.small = true; break;
+                        case 'a': {
+                            const href = ch.getAttribute('href') || '';
+                            const red = ch.classList.contains('new') || /redlink=1/.test(href);
+                            if (!red) {
+                                if (href.startsWith('#')) s.int = href.slice(1);
+                                else { const r = resolveHref(href, this.ctx.host); if (r) s.href = r; }
+                            }
+                            break;
+                        }
+                    }
+                    if ((tag === 'div' || tag === 'p' || tag === 'li' || tag === 'dd' || tag === 'dt') && out.length) {
+                        const last = out[out.length - 1];
+                        if (!last.br && !/s$/.test(last.text || '')) this.addText(out, ' ', st);
+                    }
+                    this.collect(ch, s, out);
+                }
+            }
+
+            runsOf(el, extra) {
+                const out = [];
+                this.collect(el, { ...(extra || {}) }, out);
+                return out;
+            }
+            hasText(runs) { return runs.some(r => !r.br && r.text.trim()); }
+
+            /* ---------- gambar ---------- */
+            imageEntry(img) {
+                const w = parseInt(img.getAttribute('width') || '0', 10);
+                const h = parseInt(img.getAttribute('height') || '0', 10);
+                if (w && w < 48) return null;                    // ikon kecil
+                let src = img.getAttribute('src') || '';
+                if (!src) return null;
+                if (src.startsWith('//')) src = 'https:' + src;
+                // MediaWiki kini menyajikan thumbnail dari thumb.wikimedia.org (dulu upload.wikimedia.org); parameter utm_* dibuang
+                if (!/^https:\/\/(?:upload|thumb)\.wikimedia\.org\//.test(src)) return null;
+                src = src.split('?')[0];
+                const km = src.match(/\/thumb\/(.+)\/\d+px-[^/]+$/);
+                const key = km ? km[1] : src;
+                let e = this.images.get(key);
+                if (!e) {
+                    const a = img.closest('a');
+                    let title = null;
+                    if (a) {
+                        const hf = a.getAttribute('href') || '';
+                        const mm = hf.match(/\/wiki\/([^?#]+)/) || hf.match(/^\.\/([^?#]+)/);
+                        if (mm && /:/.test(mm[1])) { try { title = decodeURIComponent(mm[1]).replace(/_/g, ' '); } catch (er) { } }
+                    }
+                    const repo = /\/wikipedia\/commons\//.test(src) ? 'commons' : (/\/wikipedia\/[a-z-]+\//.test(src) ? 'local' : null);
+                    if (!title && repo === 'commons') {
+                        const nm = src.match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/);
+                        if (nm) { try { title = 'File:' + decodeURIComponent(nm[1]).replace(/_/g, ' '); } catch (er) { } }
+                    }
+                    e = {
+                        src, wAttr: w, hAttr: h,
+                        fileW: parseInt(img.getAttribute('data-file-width') || '0', 10),
+                        fileH: parseInt(img.getAttribute('data-file-height') || '0', 10),
+                        title, repo, ok: false, data: null, pw: 0, ph: 0
+                    };
+                    this.images.set(key, e);
+                }
+                return e;
+            }
+
+            captionRuns(cap) {
+                if (!cap) return [];
+                const runs = this.runsOf(cap);
+                return this.hasText(runs) ? runs : [];
+            }
+
+            /* ---------- blok ---------- */
+            walk(parent) {
+                for (const el of parent.children) {
+                    if (skipEl(el)) continue;
+                    const tag = el.localName;
+                    const cl = el.classList;
+
+                    if (tag === 'div' && cl.contains('mw-heading')) {
+                        const h = el.querySelector('h1,h2,h3,h4,h5,h6');
+                        if (h) this.heading(h);
+                        continue;
+                    }
+                    if (/^h[1-6]$/.test(tag)) { this.heading(el); continue; }
+                    if (tag === 'p') { this.paragraph(el); continue; }
+                    if (tag === 'ul' || tag === 'ol') {
+                        if (cl.contains('gallery')) { this.gallery(el); continue; }
+                        if (cl.contains('references')) { this.references(el); continue; }
+                        this.list(el); continue;
+                    }
+                    if (tag === 'dl') { this.deflist(el); continue; }
+                    if (tag === 'figure') { this.figure(el); continue; }
+                    if (tag === 'blockquote') {
+                        const runs = this.runsOf(el);
+                        if (this.hasText(runs)) this.blocks.push({ t: 'p', runs, quote: true });
+                        continue;
+                    }
+                    if (tag === 'pre') {
+                        const t = el.textContent.replace(/\s+$/, '');
+                        if (t.trim()) this.blocks.push({ t: 'p', runs: [{ text: t.replace(/\s+/g, ' ') }] });
+                        continue;
+                    }
+                    if (tag === 'table') { this.table(el); continue; }
+                    if (tag === 'div' && (cl.contains('hatnote') || cl.contains('rellink') || cl.contains('dablink'))) {
+                        const runs = this.runsOf(el);
+                        if (this.hasText(runs)) this.blocks.push({ t: 'p', runs, hatnote: true });
+                        continue;
+                    }
+                    if (tag === 'div' && cl.contains('thumb')) {
+                        if (cl.contains('tmulti')) this.multiThumb(el); else this.legacyThumb(el);
+                        continue;
+                    }
+                    if (tag === 'div' && (cl.contains('reflist') || cl.contains('refbegin') || cl.contains('mw-references-wrap') || cl.contains('references-small'))) {
+                        this.walkRefs(el);
+                        continue;
+                    }
+                    // wadah umum (kolom, kutipan, dsb): telusuri isinya
+                    if (el.children.length) this.walk(el);
+                    else {
+                        const runs = this.runsOf(el);
+                        if (this.hasText(runs) && (tag === 'div' || tag === 'center')) this.blocks.push({ t: 'p', runs });
+                    }
+                }
+            }
+
+            walkRefs(el) {
+                const alpha = /lower-alpha/.test(el.className + ' ' + (el.getAttribute('style') || ''));
+                for (const ol of el.querySelectorAll('ol.references')) this.references(ol, alpha);
+                // daftar daftar pustaka (refbegin) berupa ul/p biasa
+                if (!el.querySelector('ol.references')) this.walk(el);
+            }
+
+            heading(h) {
+                const lvl = Math.min(6, Math.max(2, parseInt(h.localName[1], 10) || 2));
+                const clone = h.cloneNode(true);
+                clone.querySelectorAll('.mw-editsection, style, script').forEach(n => n.remove());
+                const text = cleanText(clone.textContent).replace(/\s+/g, ' ').trim();
+                if (!text) return;
+                if (!this.seenHeading) { this.seenHeading = true; this.flushInfobox(); }
+                const i = lvl - 2;
+                this.counters[i]++;
+                for (let k = i + 1; k < 5; k++) this.counters[k] = 0;
+                const num = this.counters.slice(0, i + 1).join('.');
+                this.blocks.push({ t: 'h', level: lvl, text, id: h.id || '', num, uid: 'sec' + (++this.headingSeq) });
+            }
+
+            paragraph(p) {
+                // gambar besar di dalam paragraf (jarang) diperlakukan sebagai gambar mandiri
+                p.querySelectorAll('img.mw-file-element, img').forEach(im => {
+                    const w = parseInt(im.getAttribute('width') || '0', 10);
+                    if (w >= 120) { const e = this.imageEntry(im); if (e) this.blocks.push({ t: 'fig', img: e, caption: [] }); }
+                });
+                const runs = this.runsOf(p);
+                if (this.hasText(runs)) this.blocks.push({ t: 'p', runs });
+            }
+
+            list(el) {
+                const b = { t: 'list', ordered: el.localName === 'ol', start: parseInt(el.getAttribute('start') || '1', 10) || 1, items: [] };
+                this.listItems(el, b.items);
+                if (b.items.length) this.blocks.push(b);
+            }
+            listItems(el, items) {
+                for (const li of el.children) {
+                    if (li.localName !== 'li' || skipEl(li)) continue;
+                    const it = { runs: [], children: [] };
+                    const tmp = [];
+                    for (const ch of li.childNodes) {
+                        if (ch.nodeType === 1 && (ch.localName === 'ul' || ch.localName === 'ol')) {
+                            const sub = { ordered: ch.localName === 'ol', start: parseInt(ch.getAttribute('start') || '1', 10) || 1, items: [] };
+                            this.listItems(ch, sub.items);
+                            if (sub.items.length) it.children.push(sub);
+                        } else if (ch.nodeType === 1 && (ch.localName === 'div' || ch.localName === 'figure') && ch.querySelector('img') && !this.hasText(this.runsOf(ch))) {
+                            continue;
+                        } else {
+                            tmp.push(ch);
+                        }
+                    }
+                    for (const ch of tmp) {
+                        if (ch.nodeType === 3) this.addText(it.runs, ch.nodeValue, {});
+                        else if (ch.nodeType === 1 && !skipEl(ch)) {
+                            const holder = this.doc.createElement('span');
+                            holder.appendChild(ch.cloneNode(true));
+                            this.collect(holder, {}, it.runs);
+                        }
+                    }
+                    if (this.hasText(it.runs) || it.children.length) items.push(it);
+                }
+            }
+
+            deflist(el) {
+                for (const ch of el.children) {
+                    if (skipEl(ch)) continue;
+                    const runs = this.runsOf(ch);
+                    if (!this.hasText(runs)) continue;
+                    if (ch.localName === 'dt') this.blocks.push({ t: 'p', runs, bold: true, keepNext: true });
+                    else this.blocks.push({ t: 'p', runs, indent: 6 });
+                }
+            }
+
+            references(ol, alpha) {
+                const items = [];
+                for (const li of ol.children) {
+                    if (li.localName !== 'li' || skipEl(li)) continue;
+                    const runs = this.runsOf(li);
+                    if (this.hasText(runs)) items.push({ id: li.id || '', runs });
+                }
+                if (items.length) this.blocks.push({ t: 'refs', items, alpha: !!alpha });
+            }
+
+            figure(el) {
+                const img = [...el.querySelectorAll('img')].find(i => this.imageEntry(i));
+                if (!img) return;
+                const e = this.imageEntry(img);
+                const cap = el.querySelector('figcaption, .thumbcaption');
+                this.blocks.push({ t: 'fig', img: e, caption: this.captionRuns(cap) });
+            }
+            legacyThumb(el) {
+                const img = [...el.querySelectorAll('img')].find(i => this.imageEntry(i));
+                if (!img) return;
+                const e = this.imageEntry(img);
+                const cap = el.querySelector('.thumbcaption');
+                this.blocks.push({ t: 'fig', img: e, caption: this.captionRuns(cap) });
+            }
+            multiThumb(el) {
+                const items = [];
+                el.querySelectorAll('.tsingle').forEach(ts => {
+                    const img = [...ts.querySelectorAll('img')].find(i => this.imageEntry(i));
+                    if (!img) return;
+                    items.push({ img: this.imageEntry(img), caption: this.captionRuns(ts.querySelector('.thumbcaption')) });
+                });
+                if (items.length) this.blocks.push({ t: 'grid', items, cols: Math.min(3, items.length) });
+                const all = el.querySelector(':scope > .thumbinner > .thumbcaption, :scope > .thumbcaption');
+                const runs = this.captionRuns(all);
+                if (runs.length) this.blocks.push({ t: 'p', runs, caption: true });
+            }
+            gallery(ul) {
+                const items = [];
+                ul.querySelectorAll('li.gallerybox').forEach(li => {
+                    const img = [...li.querySelectorAll('img')].find(i => this.imageEntry(i));
+                    if (!img) return;
+                    items.push({ img: this.imageEntry(img), caption: this.captionRuns(li.querySelector('.gallerytext')) });
+                });
+                if (items.length) this.blocks.push({ t: 'grid', items, cols: items.length === 1 ? 1 : (items.length === 2 || items.length === 4 ? 2 : 3) });
+            }
+
+            /* ---------- tabel ---------- */
+            table(el) {
+                const cl = el.classList;
+                if (cl.contains('infobox') || cl.contains('sidebar') || cl.contains('vcard') || cl.contains('infobox_v2') || cl.contains('infobox_v3')) { this.infobox(el); return; }
+                for (const c of cl) if (SKIP_CLASS.has(c)) return;
+                const t = this.tableModel(el);
+                if (t) this.blocks.push(t);
+            }
+
+            colorStyles(el, base) {
+                const st = el.getAttribute('style') || '';
+                const s = { ...base };
+                const bg = (st.match(/background(?:-color)?\s*:\s*([^;]+)/i) || [])[1] || el.getAttribute('bgcolor');
+                const fg = (st.match(/(?:^|;)\s*color\s*:\s*([^;]+)/i) || [])[1];
+                const al = (st.match(/text-align\s*:\s*(left|right|center)/i) || [])[1] || el.getAttribute('align');
+                const bgc = parseColor(bg), fgc = parseColor(fg);
+                if (bgc) { s.fillColor = bgc; if (!fgc && lum(bgc) < 0.42) s.textColor = C.white; }
+                if (fgc) s.textColor = fgc;
+                if (al && /^(left|right|center)$/i.test(al)) s.halign = al.toLowerCase();
+                if (/font-weight\s*:\s*(bold|[6-9]00)/i.test(st)) s.fontStyle = 'bold';
+                return s;
+            }
+
+            cellText(td) {
+                let s = '';
+                const w = n => {
+                    for (const c of n.childNodes) {
+                        if (c.nodeType === 3) s += cleanText(c.nodeValue).replace(/[ \t\r\n\f]+/g, ' ');
+                        else if (c.nodeType === 1 && !skipEl(c)) {
+                            const t = c.localName;
+                            if (t === 'br') s += '\n';
+                            else if (t === 'li') { s += '\n• '; w(c); }
+                            else if (/^(p|div|tr|dd|dt|ul|ol|table|caption)$/.test(t)) { s += '\n'; w(c); s += '\n'; }
+                            else if (t === 'img' || t === 'style' || t === 'script') { /* gambar dalam sel dilewati */ }
+                            else if (t === 'sup' && /^[123]$/.test(c.textContent.trim())) s += { 1: '¹', 2: '²', 3: '³' }[c.textContent.trim()];
+                            else w(c);
+                        }
+                    }
+                };
+                w(td);
+                return s.split('\n').map(x => x.trim()).filter(Boolean).join('\n');
+            }
+
+            cellLink(td, text) {
+                const as = [...td.querySelectorAll('a[href]')].filter(a => !skipEl(a) && !a.closest('sup') && !a.classList.contains('new'));
+                if (as.length !== 1) return null;
+                const a = as[0];
+                if (a.textContent.trim().length < text.length * 0.5) return null;
+                return resolveHref(a.getAttribute('href'), this.ctx.host);
+            }
+
+            tableModel(el) {
+                const trs = [...el.rows];
+                if (trs.length < 1) return null;
+                let capEl = el.querySelector(':scope > caption');
+                const caption = capEl ? this.runsOf(capEl) : [];
+                // baris judul: baris-baris teratas yang semua selnya <th>
+                let headCount = 0;
+                for (const tr of trs) {
+                    const cells = [...tr.cells];
+                    if (cells.length && cells.every(c => c.localName === 'th') && headCount < 3) headCount++;
+                    else break;
+                }
+                if (headCount === trs.length) headCount = Math.min(1, headCount);
+                const head = [], body = [];
+                let maxCols = 0;
+                trs.forEach((tr, ri) => {
+                    const row = [];
+                    let cols = 0;
+                    const rst = this.colorStyles(tr, {});
+                    for (const td of tr.cells) {
+                        const text = this.cellText(td);
+                        const cs = Math.max(1, parseInt(td.getAttribute('colspan') || '1', 10) || 1);
+                        const rs = Math.max(1, parseInt(td.getAttribute('rowspan') || '1', 10) || 1);
+                        cols += cs;
+                        const isTh = td.localName === 'th';
+                        let styles = this.colorStyles(td, { ...rst });
+                        if (isTh && !styles.fontStyle) styles.fontStyle = 'bold';
+                        if (!styles.halign && /^[\s\d.,+\-−–—%°$€£:/()]+$/.test(text) && text) styles.halign = isTh ? 'center' : 'right';
+                        const cell = { content: text, colSpan: cs, rowSpan: rs, styles };
+                        const link = this.cellLink(td, text);
+                        if (link) cell.link = link;
+                        row.push(cell);
+                    }
+                    maxCols = Math.max(maxCols, cols);
+                    if (!row.length) return;
+                    (ri < headCount ? head : body).push(row);
+                });
+                if (!body.length && !head.length) return null;
+                if (!body.length) { body.push(...head.splice(0)); }
+                return { t: 'table', caption, head, body, cols: maxCols };
+            }
+
+            infobox(el) {
+                const seq = [];
+                const cap = el.querySelector(':scope > caption');
+                if (cap) { const t = this.cellText(cap); if (t) seq.push({ k: 'title', text: t }); }
+                let first = !cap;
+                for (const tr of el.rows) {
+                    const cells = [...tr.cells].filter(c => !skipEl(c));   // buang baris navigasi templat (lihat/bicara/sunting)
+                    if (!cells.length) continue;
+                    const imgs = [...tr.querySelectorAll('img')].map(i => this.imageEntry(i)).filter(Boolean);
+                    if (imgs.length && cells.length <= 2) {
+                        const capRuns = [];
+                        for (const c of cells) {
+                            const clone = c.cloneNode(true);
+                            clone.querySelectorAll('img, figure').forEach(n => n.remove());
+                            this.collect(clone, {}, capRuns);
+                        }
+                        imgs.forEach((e, idx) => seq.push({ k: 'img', img: e, caption: idx === imgs.length - 1 && this.hasText(capRuns) ? capRuns : [] }));
+                        first = false;
+                        continue;
+                    }
+                    const texts = cells.map(c => this.cellText(c));
+                    if (cells.length === 1) {
+                        if (!texts[0]) continue;
+                        if (cells[0].localName === 'th' || first) seq.push({ k: first ? 'title' : 'header', text: texts[0] });
+                        else seq.push({ k: 'full', text: texts[0] });
+                    } else if (cells.length === 2) {
+                        if (!texts[0] && !texts[1]) continue;
+                        const link = this.cellLink(cells[1], texts[1]);
+                        seq.push({ k: 'kv', label: texts[0], value: texts[1], link });
+                    } else {
+                        const t = texts.filter(Boolean).join('  ·  ');
+                        if (t) seq.push({ k: 'full', text: t });
+                    }
+                    first = false;
+                }
+                // subjudul tanpa isi di bawahnya (mis. setelah baris navigasi dibuang) tidak dicetak
+                for (let i = seq.length - 1; i >= 0; i--) {
+                    if (seq[i].k === 'header' && (!seq[i + 1] || seq[i + 1].k === 'header')) seq.splice(i, 1);
+                }
+                if (seq.length) {
+                    const blk = { t: 'infobox', seq };
+                    if (this.seenHeading) this.blocks.push(blk); else this.pendingInfobox.push(blk);
+                }
+            }
+            flushInfobox() {
+                if (this.pendingInfobox.length) { this.blocks.push(...this.pendingInfobox); this.pendingInfobox = []; }
+            }
+
+            parse() {
+                const root = this.doc.querySelector('.mw-parser-output') || this.doc.body;
+                this.walk(root);
+                this.flushInfobox();
+                return { blocks: this.blocks, images: [...this.images.values()] };
+            }
+        }
+
+        /* =====================================================================
+           Pengambilan gambar
+           ===================================================================== */
+        function candidateUrls(e, size) {
+            const urls = [];
+            const m = e.src.match(/^(https:\/\/(?:upload|thumb)\.wikimedia\.org\/wikipedia\/[^/]+)\/thumb\/(.+)\/(\d+)px-([^/]+)$/);
+            if (m) {
+                const base = m[1].replace('//thumb.wikimedia.org', '//upload.wikimedia.org');   // upload.* melayani berkas asli dan thumbnail dengan CORS
+                const orig = m[2];
+                const isSvg = /\.svg$/i.test(orig);
+                const raster = /\.(jpe?g|png|gif|webp)$/i.test(orig) && /\.(jpe?g|png|gif|webp)$/i.test(m[4]);
+                if (!isSvg && raster && e.fileW && e.fileW <= size) urls.push(`${base}/${orig}`);
+                else if (isSvg || !e.fileW || e.fileW > size) urls.push(`${base}/thumb/${orig}/${size}px-${m[4]}`);
+            }
+            urls.push(e.src);
+            return [...new Set(urls)];
+        }
+
+        async function loadImage(e, size, signal) {
+            for (const url of candidateUrls(e, size)) {
+                throwIfAborted(signal);
+                // batas waktu per permintaan: satu gambar yang macet tidak boleh menahan seluruh proses
+                const tctl = new AbortController();
+                const onAbort = () => tctl.abort();
+                if (signal) signal.addEventListener('abort', onAbort, { once: true });
+                const timer = setTimeout(() => tctl.abort(), 25000);
+                try {
+                    const res = await fetch(url, { signal: tctl.signal, mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' });
+                    if (!res.ok) { if (res.status === 429 || res.status === 503) await new Promise(r => setTimeout(r, 900)); continue; }
+                    const blob = await res.blob();
+                    const obj = URL.createObjectURL(blob);
+                    try {
+                        const img = new Image();
+                        // onload, bukan img.decode(): decode() bisa menggantung saat tab berada di latar belakang
+                        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('gambar tidak dapat didekode')); img.src = obj; });
+                        const nw = img.naturalWidth, nh = img.naturalHeight;
+                        if (!nw || !nh) continue;
+                        const scale = Math.min(1, size / Math.max(nw, nh));
+                        const cw = Math.max(1, Math.round(nw * scale)), ch = Math.max(1, Math.round(nh * scale));
+                        const cv = document.createElement('canvas');
+                        cv.width = cw; cv.height = ch;
+                        const cx = cv.getContext('2d');
+                        cx.fillStyle = '#fff';
+                        cx.fillRect(0, 0, cw, ch);
+                        cx.drawImage(img, 0, 0, cw, ch);
+                        e.data = cv.toDataURL('image/jpeg', 0.82);
+                        e.pw = cw; e.ph = ch; e.ok = true;
+                        return true;
+                    } finally { URL.revokeObjectURL(obj); }
+                } catch (err) {
+                    if (signal && signal.aborted) throw err;
+                } finally {
+                    clearTimeout(timer);
+                    if (signal) signal.removeEventListener('abort', onAbort);
+                }
+            }
+            return false;
+        }
+
+        async function loadAllImages(images, size, signal, onProgress) {
+            let next = 0, done = 0;
+            const worker = async () => {
+                while (next < images.length) {
+                    const e = images[next++];
+                    throwIfAborted(signal);
+                    let ok = await loadImage(e, size, signal);
+                    if (!ok) ok = await loadImage(e, size, signal);          // satu kali coba ulang
+                    done++;
+                    onProgress(done, images.length);
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(5, images.length) }, worker));
+        }
+
+        function stripHtml(s) {
+            if (!s) return '';
+            const d = new DOMParser().parseFromString(String(s), 'text/html');
+            return (d.body.textContent || '').replace(/\s+/g, ' ').trim();
+        }
+
+        async function fetchImageMeta(images, lang, signal) {
+            const groups = { commons: [], local: [] };
+            images.filter(e => e.ok && e.title && e.repo).forEach(e => groups[e.repo].push(e));
+            const apis = { commons: 'https://commons.wikimedia.org/w/api.php', local: `https://${lang}.wikipedia.org/w/api.php` };
+            for (const g of ['commons', 'local']) {
+                const list = groups[g];
+                for (let i = 0; i < list.length; i += 40) {
+                    const batch = list.slice(i, i + 40);
+                    try {
+                        const j = await apiGet(apis[g], {
+                            action: 'query', prop: 'imageinfo', iiprop: 'extmetadata',
+                            iiextmetadatafilter: 'Artist|LicenseShortName|Credit', titles: batch.map(e => e.title).join('|')
+                        }, signal);
+                        const byTitle = new Map();
+                        (j.query.pages || []).forEach(p => { if (p.imageinfo && p.imageinfo[0]) byTitle.set(p.title, p.imageinfo[0].extmetadata || {}); });
+                        const norm = new Map((j.query.normalized || []).map(n => [n.from, n.to]));
+                        batch.forEach(e => {
+                            const md = byTitle.get(norm.get(e.title) || e.title);
+                            if (md) e.meta = {
+                                author: stripHtml(md.Artist && md.Artist.value || md.Credit && md.Credit.value).slice(0, 110),
+                                license: stripHtml(md.LicenseShortName && md.LicenseShortName.value)
+                            };
+                        });
+                    } catch (err) { if (signal && signal.aborted) throw err; }
+                }
+            }
+        }
+
+        async function fetchContributors(info, pageid, signal) {
+            try {
+                const j = await apiGet(info.api, { action: 'query', prop: 'contributors', pageids: String(pageid), pclimit: 'max' }, signal);
+                const p = j.query.pages[0];
+                return { names: (p.contributors || []).map(c => c.name), anon: p.anoncontributors || 0, more: !!j.continue };
+            } catch (err) { if (signal && signal.aborted) throw err; return null; }
+        }
+
+        /* =====================================================================
+           Mesin tata letak PDF (jsPDF)
+           ===================================================================== */
+        let doc = null, FONT = 'Roboto', y = PAGE.mt;
+        let T = L10N.en;
+        let destMap = new Map();          // id -> {page, y}
+        let pendingLinks = [];            // tautan internal yang menunggu tujuan
+        const wcache = new Map();
+        let measureCtx = null;
+
+        const curPage = () => doc.internal.getCurrentPageInfo().pageNumber;
+        function newPage() { doc.addPage(); y = PAGE.mt; }
+        function ensure(h) { if (y + h > PAGE.h - PAGE.mb + 0.01) { newPage(); return true; } return false; }
+
+        function canvasFont(st) { return `${st.b ? '700' : '400'} ${st.size * PT * CANVAS_PX}px ${CANVAS_FAMILY}`; }
+        function textW(str, st) {
+            const k = (st.b ? 'b' : 'n') + st.size + '|' + str;
+            let w = wcache.get(k);
+            if (w !== undefined) return w;
+            if (unsupported(str)) {
+                if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+                measureCtx.font = canvasFont(st);
+                w = measureCtx.measureText(str).width / CANVAS_PX;
+            } else {
+                doc.setFont(FONT, st.b ? 'bold' : 'normal');
+                doc.setFontSize(st.size);
+                w = doc.getTextWidth(str);
+            }
+            wcache.set(k, w);
+            return w;
+        }
+
+        function styleOf(r, base) {
+            const shrink = (r.sup || r.sub) ? 0.68 : (r.small ? 0.86 : 1);
+            const size = +(base.size * shrink).toFixed(2);
+            const fs = base.size * PT;
+            const linkish = r.href || r.int || r.cite;
+            return {
+                size, b: !!(base.b || r.b), i: !!(base.i || r.i),
+                color: linkish ? C.link : base.color,
+                dy: r.sup ? -fs * 0.36 : (r.sub ? fs * 0.14 : 0)
+            };
+        }
+
+        function buildChunks(runs, base) {
+            const chunks = [];
+            let cur = null, spaceNext = null;
+            const flush = () => { if (cur) { chunks.push(cur); cur = null; } };
+            for (const r of runs) {
+                if (r.br) { flush(); chunks.push({ br: true }); spaceNext = null; continue; }
+                const st = styleOf(r, base);
+                const key = r.href ? 'u:' + r.href : (r.int ? 'i:' + r.int : null);
+                const parts = r.text.match(/ +|[^ ]+/g) || [];
+                for (const part of parts) {
+                    if (part[0] === ' ') { flush(); spaceNext = st; }
+                    else {
+                        if (!cur) { cur = { atoms: [], w: 0, sp: spaceNext }; spaceNext = null; }
+                        const a = { str: part, st, key, href: r.href || null, int: r.int || null, canvas: unsupported(part) };
+                        a.w = textW(part, st);
+                        cur.atoms.push(a); cur.w += a.w;
+                    }
+                }
+            }
+            flush();
+            return chunks;
+        }
+
+        function splitChunk(ch, width) {
+            const out = [];
+            let cur = { atoms: [], w: 0, sp: ch.sp };
+            const mk = (str, a) => ({ ...a, str, w: textW(str, a.st) });
+            for (const a of ch.atoms) {
+                let buf = '';
+                for (const c of a.str) {
+                    const nw = textW(buf + c, a.st);
+                    if (cur.w + nw > width && (buf !== '' || cur.w > 0)) {
+                        if (buf) { const na = mk(buf, a); cur.atoms.push(na); cur.w += na.w; buf = ''; }
+                        out.push(cur);
+                        cur = { atoms: [], w: 0, sp: null };
+                        buf = c;
+                    } else buf += c;
+                }
+                if (buf) { const na = mk(buf, a); cur.atoms.push(na); cur.w += na.w; }
+            }
+            out.push(cur);
+            return out;
+        }
+
+        function breakLines(chunks, width) {
+            const lines = [];
+            let line = { items: [], w: 0, gaps: 0, forced: false, last: false };
+            const add = (ch, sw) => { line.items.push({ ch, sw }); line.w += sw + ch.w; if (sw > 0) line.gaps++; };
+            const newLine = () => { lines.push(line); line = { items: [], w: 0, gaps: 0, forced: false, last: false }; };
+            for (const ch of chunks) {
+                if (ch.br) { line.forced = true; newLine(); continue; }
+                const sw = ch.sp && line.items.length ? textW(' ', ch.sp) : 0;
+                if (line.w + sw + ch.w <= width + 0.01) { add(ch, sw); continue; }
+                if (ch.w > width) {
+                    if (line.items.length) newLine();
+                    const parts = splitChunk(ch, width);
+                    parts.forEach((p, i) => { if (i > 0) newLine(); add(p, 0); });
+                    continue;
+                }
+                if (line.items.length) newLine();
+                add(ch, 0);
+            }
+            if (line.items.length || !lines.length) lines.push(line);
+            lines[lines.length - 1].last = true;
+            return lines.filter((l, i) => l.items.length || i < lines.length - 1);
+        }
+
+        function layoutLines(runs, o) {
+            return breakLines(buildChunks(runs, { size: o.size, b: o.b, i: o.i, color: o.color }), o.width);
+        }
+
+        function drawCanvasText(str, st, x, baseY, w) {
+            const fs = st.size * PT;
+            const hMm = fs * 1.6, base = fs * 1.2;
+            const cv = document.createElement('canvas');
+            cv.width = Math.max(1, Math.ceil(w * CANVAS_PX)); cv.height = Math.max(1, Math.ceil(hMm * CANVAS_PX));
+            const cx = cv.getContext('2d');
+            cx.fillStyle = `rgb(${st.color[0]},${st.color[1]},${st.color[2]})`;
+            cx.font = canvasFont(st);
+            cx.textBaseline = 'alphabetic';
+            cx.fillText(str, 0, base * CANVAS_PX);
+            doc.addImage(cv.toDataURL('image/png'), 'PNG', x, baseY - base, cv.width / CANVAS_PX, cv.height / CANVAS_PX);
+        }
+
+        function textAt(str, x, by, st) {
+            doc.setFont(FONT, st.b ? 'bold' : 'normal');
+            doc.setFontSize(st.size);
+            doc.setTextColor(st.color[0], st.color[1], st.color[2]);
+            if (st.i) {
+                // Roboto hanya punya regular dan bold: miring dibuat dengan memiringkan teks 11°
+                const k = doc.internal.scaleFactor, s = 0.2, yPt = (PAGE.h - by) * k;
+                doc.setCurrentTransformationMatrix(new doc.Matrix(1, 0, s, 1, -s * yPt, 0));
+                doc.text(str, x, by);
+                doc.setCurrentTransformationMatrix(new doc.Matrix(1, 0, -s, 1, s * yPt, 0));
+            } else doc.text(str, x, by);
+        }
+
+        function flushLink(L, by) {
+            if (!L) return;
+            const fs = L.size * PT;
+            const rect = { x: L.x0 - 0.2, y: by - fs * 0.85, w: L.x1 - L.x0 + 0.4, h: fs * 1.25 };
+            if (L.href) doc.link(rect.x, rect.y, rect.w, rect.h, { url: L.href });
+            else if (L.int) pendingLinks.push({ page: curPage(), ...rect, id: L.int });
+        }
+
+        function drawLine(line, x, by, o) {
+            let extra = 0, sx = x;
+            const free = o.width - line.w;
+            if (o.justify && !line.last && !line.forced && line.gaps > 0) {
+                const per = free / line.gaps;
+                const sp = textW(' ', { size: o.size, b: false });
+                if (per >= 0 && per <= sp * 2.4) extra = per;
+            } else if (o.align === 'center') sx = x + free / 2;
+            else if (o.align === 'right') sx = x + free;
+            let cx = sx, link = null;
+            for (const it of line.items) {
+                if (it.sw > 0) cx += it.sw + extra;
+                for (const a of it.ch.atoms) {
+                    if (a.canvas) drawCanvasText(a.str, a.st, cx, by + a.st.dy, a.w);
+                    else textAt(a.str, cx, by + a.st.dy, a.st);
+                    if (a.key) {
+                        if (link && link.key === a.key) link.x1 = cx + a.w;
+                        else { flushLink(link, by); link = { key: a.key, href: a.href, int: a.int, cite: a.st.size < o.size, x0: cx, x1: cx + a.w, size: o.size }; }
+                    } else { flushLink(link, by); link = null; }
+                    cx += a.w;
+                }
+            }
+            flushLink(link, by);
+        }
+
+        // Menggambar paragraf dengan pemecahan halaman (tanpa baris yatim/janda). Mengembalikan posisi awal.
+        function para(runs, o) {
+            o = Object.assign({ size: BODY, color: C.ink, x: PAGE.ml, width: CW, justify: true, align: 'left', after: 2.4, b: false, i: false, marker: null, markerRight: 0, lead: LEAD, keep: 0 }, o);
+            const lines = layoutLines(runs, o);
+            if (!lines.length) return null;
+            const fs = o.size * PT, lh = fs * o.lead;
+            if (o.keep) ensure(Math.min(o.keep, PAGE.h - PAGE.mt - PAGE.mb));
+            let i = 0, start = null;
+            while (i < lines.length) {
+                const avail = Math.floor((PAGE.h - PAGE.mb - y + 0.01) / lh);
+                const remaining = lines.length - i;
+                let take;
+                if (avail <= 0) { newPage(); continue; }
+                if (remaining <= avail) take = remaining;
+                else {
+                    take = avail;
+                    if (remaining - take === 1 && take > 1) take -= 1;       // jangan sisakan satu baris di halaman berikut
+                    if (i === 0 && take < 2) { newPage(); continue; }          // jangan tinggalkan satu baris di dasar halaman
+                }
+                if (!start) start = { page: curPage(), y };
+                for (let k = 0; k < take; k++) {
+                    const by = y + k * lh + (lh - fs) / 2 + fs * 0.8;
+                    if (i === 0 && k === 0 && o.marker) {
+                        const mst = { size: o.size, b: !!o.markerBold, i: false, color: o.markerColor || C.muted, dy: 0 };
+                        const mw = textW(o.marker, mst);
+                        textAt(o.marker, o.markerRight - mw, by, mst);
+                    }
+                    drawLine(lines[i + k], o.x, by, o);
+                }
+                y += take * lh;
+                i += take;
+                if (i < lines.length) newPage();
+            }
+            y += o.after;
+            return start;
+        }
+
+        function linesHeight(runs, o) {
+            const lines = layoutLines(runs, o);
+            return lines.length * o.size * PT * (o.lead || LEAD);
+        }
+
+        /* ---------- judul ---------- */
+        function drawHeading(h, keep) {
+            const L = h.level;
+            const size = { 2: 16.5, 3: 12.8, 4: 11, 5: 10, 6: 9.6 }[L] || 9.6;
+            const before = { 2: 8.5, 3: 6, 4: 4.5, 5: 3.5, 6: 3.5 }[L] || 3.5;
+            const after = { 2: 2.4, 3: 1.6, 4: 1.2, 5: 1, 6: 1 }[L] || 1;
+            const color = L === 3 ? C.head3 : C.ink;
+            const o = { size, b: true, color, width: CW, justify: false, lead: 1.25 };
+            const hgt = linesHeight([{ text: h.text }], o);
+            const moved = ensure(before + hgt + after + (keep || 22));
+            if (!moved && y > PAGE.mt + 0.5) y += before;
+            const pos = { page: curPage(), y };
+            para([{ text: h.text }], { ...o, after: 0 });
+            if (L === 2) { doc.setDrawColor(...C.line); doc.setLineWidth(0.3); doc.line(PAGE.ml, y + 0.6, PAGE.w - PAGE.mr, y + 0.6); y += 1.6; }
+            y += after;
+            destMap.set(h.uid, pos);
+            if (h.id) destMap.set(normId(h.id), pos);
+            h.pos = pos;
+        }
+
+        /* ---------- gambar ---------- */
+        // Gambar mandiri yang berurutan (tanpa teks di antaranya) digabung menjadi satu galeri 2-3 kolom
+        // agar tidak menumpuk satu per baris dengan ruang kosong besar.
+        function groupFigures(blocks) {
+            const out = [];
+            for (let i = 0; i < blocks.length; i++) {
+                if (blocks[i].t !== 'fig') { out.push(blocks[i]); continue; }
+                let j = i;
+                while (j < blocks.length && blocks[j].t === 'fig') j++;
+                const run = blocks.slice(i, j);
+                if (run.length === 1) out.push(run[0]);
+                else {
+                    const n = run.length;
+                    out.push({ t: 'grid', items: run.map(b => ({ img: b.img, caption: b.caption })), cols: (n === 2 || n === 4) ? 2 : 3 });
+                }
+                i = j - 1;
+            }
+            return out;
+        }
+        function fitImage(e, maxW, maxH) {
+            const pxMm = 0.2646;
+            let s = Math.min(maxW / e.pw, maxH / e.ph, pxMm * 2.2);
+            return { w: e.pw * s, h: e.ph * s };
+        }
+        function drawImageBox(e, x, yy, w, h) {
+            doc.addImage(e.data, 'JPEG', x, yy, w, h, e.src, 'FAST');
+            doc.setDrawColor(...C.line); doc.setLineWidth(0.15); doc.rect(x, yy, w, h);
+        }
+        function placeholder(x, yy, w, h) {
+            doc.setFillColor(...C.soft); doc.setDrawColor(...C.line); doc.setLineWidth(0.15);
+            doc.rect(x, yy, w, h, 'FD');
+            textAt(T.figFail, x + w / 2 - textW(T.figFail, { size: 8, b: false }) / 2, yy + h / 2 + 1, { size: 8, b: false, i: false, color: C.faint, dy: 0 });
+        }
+
+        function drawFigure(img, caption, opt = {}) {
+            const wide = img.ok && img.ph && img.pw / img.ph > 2.2;      // panorama / diagram sangat lebar
+            const maxW = opt.maxW || Math.min(CW, wide ? 135 : 100), maxH = opt.maxH || 76;
+            const box = img.ok ? fitImage(img, maxW, maxH) : { w: Math.min(100, maxW), h: 34 };
+            const capW = Math.min(CW, Math.max(box.w, 110));
+            const capO = { size: 8, color: C.muted, width: capW, justify: false, align: 'center', lead: 1.4 };
+            const capH = caption.length ? linesHeight(caption, capO) + 1.5 : 0;
+            ensure(Math.min(box.h + capH + 4, PAGE.h - PAGE.mt - PAGE.mb));
+            const x = PAGE.ml + (CW - box.w) / 2;
+            if (img.ok) drawImageBox(img, x, y, box.w, box.h); else placeholder(x, y, box.w, box.h);
+            y += box.h + 1.8;
+            if (caption.length) para(caption, { ...capO, x: PAGE.ml + (CW - capW) / 2, after: 0 });
+            y += 4;
+        }
+
+        function drawGrid(b) {
+            const gap = 4, minCell = 34, pxMm = 0.2646;
+            // sebarkan gambar merata per baris (mis. 10 gambar, maks. 3 kolom -> 3,3,2,2), bukan 3,3,3,1
+            const total0 = b.items.length, nRows = Math.ceil(total0 / b.cols);
+            const base = Math.floor(total0 / nRows), extra = total0 % nRows;
+            let r = 0;
+            for (let rowNo = 0; rowNo < nRows; rowNo++) {
+                const size = base + (rowNo < extra ? 1 : 0);
+                const row = b.items.slice(r, r + size);
+                r += size;
+                const n = row.length;
+                const maxH = b.maxH || (n === 1 ? 62 : (n === 2 ? 70 : 58));
+                const asp = row.map(it => (it.img.ok && it.img.ph) ? it.img.pw / it.img.ph : 1.45);
+                // tinggi sama untuk satu baris; tidak diperbesar melebihi kerapatan piksel yang masuk akal
+                let H = maxH;
+                row.forEach(it => {
+                    if (it.img.ok && it.img.ph) H = Math.min(H, it.img.ph * pxMm * 2.2);
+                    // hormati ukuran tampil di Wikipedia: bendera/lambang/ikon yang kecil di halaman web tidak diperbesar jadi raksasa
+                    if (it.img.hAttr) H = Math.min(H, Math.max(28, it.img.hAttr * pxMm * 1.7));
+                });
+                const widths = h => row.map((it, k) => { const w = asp[k] * h; return it.caption.length ? Math.max(w, minCell) : w; });
+                const total = w => w.reduce((a, c) => a + c, 0) + gap * (n - 1);
+                while (total(widths(H)) > CW && H > 18) H *= 0.96;
+                const cellW = widths(H);
+                const startX = PAGE.ml + (CW - total(cellW)) / 2;
+                const cells = row.map((it, k) => {
+                    const capO = { size: 7.6, color: C.muted, width: cellW[k], justify: false, align: 'center', lead: 1.35 };
+                    const ch = it.caption.length ? linesHeight(it.caption, capO) + 1.2 : 0;
+                    return { it, capO, ch, w: asp[k] * H };
+                });
+                const rowH = H + 1.6 + Math.max(...cells.map(c => c.ch));
+                ensure(Math.min(rowH + 3, PAGE.h - PAGE.mt - PAGE.mb));
+                const top = y;
+                let cx0 = startX;
+                cells.forEach((c, k) => {
+                    const x = cx0 + (cellW[k] - c.w) / 2;
+                    if (c.it.img.ok) drawImageBox(c.it.img, x, top, c.w, H); else placeholder(x, top, c.w, H);
+                    if (c.it.caption.length) {
+                        y = top + H + 1.6;
+                        para(c.it.caption, { ...c.capO, x: cx0, after: 0 });
+                    }
+                    cx0 += cellW[k] + gap;
+                });
+                y = top + rowH + 3;
+            }
+            y += 1;
+        }
+
+        /* ---------- tabel (autoTable) ---------- */
+        function drawCanvasCell(cell, lines) {
+            const k = doc.internal.scaleFactor;
+            const fontMm = cell.styles.fontSize / k;
+            const lineMm = fontMm * (cell.styles.lineHeight || 1.15);
+            const padL = cell.padding('left'), padT = cell.padding('top'), padR = cell.padding('right');
+            const wMm = cell.width - padL - padR;
+            const cv = document.createElement('canvas');
+            cv.width = Math.max(1, Math.round(wMm * CANVAS_PX));
+            cv.height = Math.max(1, Math.round(lines.length * lineMm * CANVAS_PX));
+            const cx = cv.getContext('2d');
+            const c = cell.styles.textColor;
+            cx.fillStyle = Array.isArray(c) ? `rgb(${c[0]},${c[1]},${c[2]})` : '#0c1a36';
+            cx.font = `${cell.styles.fontStyle === 'bold' ? '700 ' : '400 '}${fontMm * CANVAS_PX}px ${CANVAS_FAMILY}`;
+            cx.textBaseline = 'middle';
+            lines.forEach((line, i) => {
+                const w = cx.measureText(line).width;
+                cx.save();
+                cx.translate(0, (i + 0.5) * lineMm * CANVAS_PX);
+                if (w > cv.width) cx.scale(cv.width / w, 1);
+                cx.fillText(line, 0, 0);
+                cx.restore();
+            });
+            doc.addImage(cv.toDataURL('image/png'), 'PNG', cell.x + padL, cell.y + padT, wMm, lines.length * lineMm);
+        }
+
+        function runAutoTable(cfg) {
+            const baseStyles = {
+                font: FONT, fontSize: cfg.fontSize, cellPadding: cfg.pad, lineColor: C.line, lineWidth: 0.15,
+                textColor: C.ink, valign: 'middle', overflow: 'linebreak', lineHeight: 1.18
+            };
+            doc.autoTable({
+                startY: y,
+                margin: { left: PAGE.ml, right: PAGE.mr, top: PAGE.mt, bottom: PAGE.mb },
+                theme: cfg.theme || 'grid',
+                tableWidth: cfg.tableWidth || 'auto',
+                styles: baseStyles,
+                headStyles: { fillColor: C.soft, textColor: C.ink, fontStyle: 'bold', halign: 'center', lineColor: C.line },
+                showHead: 'everyPage',
+                rowPageBreak: 'avoid',
+                head: cfg.head || [], body: cfg.body,
+                columnStyles: cfg.columnStyles || {},
+                didParseCell(d) {
+                    const raw = d.cell.raw;
+                    const txt = raw && typeof raw === 'object' ? raw.content : raw;
+                    d.cell.pdfCanvas = unsupported(String(txt == null ? '' : txt));
+                    if (cfg.onParse) cfg.onParse(d);
+                },
+                willDrawCell(d) {
+                    if (d.cell.pdfCanvas) { d.cell.pdfLines = d.cell.text.slice(); d.cell.text = []; }
+                },
+                didDrawCell(d) {
+                    if (d.cell.pdfLines) drawCanvasCell(d.cell, d.cell.pdfLines);
+                    if (cfg.rowLines) { doc.setDrawColor(...C.line); doc.setLineWidth(0.15); doc.line(d.cell.x, d.cell.y + d.cell.height, d.cell.x + d.cell.width, d.cell.y + d.cell.height); }
+                    const raw = d.cell.raw;
+                    if (raw && raw.link) doc.link(d.cell.x, d.cell.y, d.cell.width, d.cell.height, { url: raw.link });
+                }
+            });
+            y = doc.lastAutoTable.finalY + 4;
+        }
+
+        function drawTable(b) {
+            if (b.caption && b.caption.length) para(b.caption, { size: 8.6, b: true, justify: false, after: 1.6, keep: 30 });
+            const n = b.cols;
+            const fontSize = n <= 3 ? 8.8 : n <= 5 ? 8.2 : n <= 7 ? 7.4 : n <= 10 ? 6.6 : n <= 14 ? 5.8 : 5.2;
+            const pad = n <= 5 ? 1.6 : n <= 10 ? 1.1 : 0.8;
+            runAutoTable({ fontSize, pad, head: b.head, body: b.body, tableWidth: n <= 4 ? 'wrap' : 'auto' });
+        }
+
+        function drawInfobox(b) {
+            // pisahkan menjadi segmen: baris teks dikumpulkan jadi satu tabel, gambar digambar di antaranya
+            let rows = [];
+            const flush = () => {
+                if (!rows.length) return;
+                runAutoTable({
+                    fontSize: 8.2, pad: 1.6, head: null, body: rows, theme: 'plain',
+                    columnStyles: { 0: { cellWidth: 44 }, 1: { cellWidth: CW - 44 } },
+                    rowLines: true
+                });
+                rows = [];
+            };
+            let imgRun = [];
+            const flushImgs = () => {
+                if (!imgRun.length) return;
+                flush();
+                // gambar infobox yang berurutan disusun mendatar, bukan menumpuk ke bawah
+                const n = imgRun.length;
+                const capIdx = imgRun.findIndex(s => s.caption.length);
+                // takarir hanya di gambar terakhir pada montase = takarir bersama: tampil sekali di bawah seluruh baris
+                const shared = (n > 1 && capIdx === n - 1 && imgRun.filter(s => s.caption.length).length === 1) ? imgRun[capIdx].caption : null;
+                const symbols = n <= 2;   // 1-2 gambar infobox biasanya bendera, lambang, atau logo: ditampilkan kecil; montase (3+) sedikit lebih besar
+                drawGrid({ items: imgRun.map((s, i) => ({ img: s.img, caption: shared && i === capIdx ? [] : s.caption })), cols: Math.min(3, n), maxH: symbols ? 36 : 50 });
+                if (shared) {
+                    const capW = Math.min(CW, 140);
+                    para(shared, { size: 8, color: C.muted, width: capW, x: PAGE.ml + (CW - capW) / 2, justify: false, align: 'center', lead: 1.4, after: 2 });
+                }
+                imgRun = [];
+            };
+            b.seq.forEach(s => {
+                if (s.k === 'img') { imgRun.push(s); return; }
+                flushImgs();
+                if (s.k === 'title') rows.push([{ content: s.text, colSpan: 2, styles: { fillColor: C.brand, textColor: C.white, fontStyle: 'bold', fontSize: 10.2, halign: 'center', cellPadding: 2.4 } }]);
+                else if (s.k === 'header') rows.push([{ content: s.text, colSpan: 2, styles: { fillColor: C.soft, textColor: C.head3, fontStyle: 'bold', halign: 'center' } }]);
+                else if (s.k === 'full') rows.push([{ content: s.text, colSpan: 2 }]);
+                else rows.push([{ content: s.label, styles: { fontStyle: 'bold', textColor: C.muted } }, s.link ? { content: s.value, link: s.link } : { content: s.value }]);
+            });
+            flushImgs();
+            flush();
+            y += 1;
+        }
+
+        /* ---------- daftar ---------- */
+        function drawList(list, level) {
+            const x = PAGE.ml + 3.2 + level * 5.6, tx = x + 4.4;
+            list.items.forEach((it, idx) => {
+                const marker = list.ordered ? `${list.start + idx}.` : (level === 0 ? '•' : '–');
+                if (it.runs.length && it.runs.some(r => !r.br && r.text.trim())) {
+                    para(it.runs, { x: tx, width: CW - (tx - PAGE.ml), marker, markerRight: tx - 1.3, justify: false, after: 0.9 });
+                }
+                it.children.forEach(c => drawList(c, level + 1));
+            });
+        }
+
+        function drawRefs(b) {
+            const alphaOf = n => { let s = ''; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(97 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+            const tx = PAGE.ml + 8;
+            b.items.forEach((it, idx) => {
+                const pos = para(it.runs, {
+                    size: 8.2, x: tx, width: CW - 8, marker: (b.alpha ? alphaOf(idx) : String(idx + 1)) + '.', markerRight: tx - 1.5,
+                    justify: false, after: 0.9, lead: 1.42
+                });
+                if (it.id && pos) destMap.set(normId(it.id), pos);
+            });
+            y += 1.5;
+        }
+
+        /* ---------- sampul ---------- */
+        function drawCover(m) {
+            doc.setFillColor(...C.brand); doc.rect(0, 0, PAGE.w, 9, 'F');
+            doc.setFillColor(...C.soft); doc.rect(0, 9, PAGE.w, 1.2, 'F');
+            let langName = m.lang;
+            try { langName = new Intl.DisplayNames([T === L10N.id ? 'id' : 'en'], { type: 'language' }).of(m.lang) || m.lang; } catch (e) { }
+            y = 62;
+            para([{ text: `${T.wiki} · ${langName}`.toUpperCase() }], { size: 9.5, b: true, color: C.brand, justify: false, after: 5 });
+            para([{ text: m.title }], { size: 31, b: true, color: C.ink, justify: false, lead: 1.18, after: 6 });
+            doc.setFillColor(...C.brand); doc.rect(PAGE.ml, y, 26, 1.3, 'F');
+            y += 12;
+            const rows = [
+                [T.source, [{ text: m.articleLabel, href: m.articleUrl }]],
+                [T.revision, [{ text: String(m.revid) }]],
+                [T.retrieved, [{ text: m.dateStr }]],
+                [T.license, [{ text: T.licenseVal + ' (' }, { text: 'creativecommons.org/licenses/by-sa/4.0', href: 'https://creativecommons.org/licenses/by-sa/4.0/' }, { text: ')' }]]
+            ];
+            rows.forEach(([k, runs]) => {
+                const yy = y;
+                para([{ text: k.toUpperCase() }], { size: 7.4, b: true, color: C.faint, justify: false, after: 0.4, width: 30 });
+                const y1 = y;
+                y = yy;
+                // nilai di kolom kanan
+                para(runs, { size: 9.2, x: PAGE.ml + 32, width: CW - 32, justify: false, after: 0 });
+                y = Math.max(y, y1) + 3.6;
+            });
+            doc.setDrawColor(...C.line); doc.setLineWidth(0.3);
+            doc.line(PAGE.ml, PAGE.h - 34, PAGE.w - PAGE.mr, PAGE.h - 34);
+            y = PAGE.h - 30;
+            const madeRuns = T.madeWith.split(/({app}|{author})/).filter(Boolean).map(s => s === '{app}' ? { text: APP_NAME, href: APP_URL } : s === '{author}' ? { text: AUTHOR_NAME, href: AUTHOR_URL } : { text: s });
+            para(madeRuns, { size: 8.2, color: C.muted, justify: false, after: 0 });
+        }
+
+        /* ---------- Daftar Isi ---------- */
+        const tocRowH = lv => lv === 2 ? 7.2 : lv === 3 ? 5.8 : 5.2;
+        function planToc(entries) {
+            let pi = 0, yy = PAGE.mt + 15;
+            entries.forEach(e => {
+                const h = tocRowH(e.level);
+                if (yy + h > PAGE.h - PAGE.mb) { pi++; yy = PAGE.mt; }
+                e.tp = pi; e.ty = yy; e.th = h;
+                yy += h;
+            });
+            return pi + 1;
+        }
+
+        function drawToc(entries, firstPage) {
+            doc.setPage(firstPage);
+            let st = { size: 20, b: true, i: false, color: C.ink, dy: 0 };
+            textAt(T.contents, PAGE.ml, PAGE.mt + 8, st);
+            doc.setDrawColor(...C.brand); doc.setLineWidth(0.8); doc.line(PAGE.ml, PAGE.mt + 11, PAGE.ml + 22, PAGE.mt + 11);
+            entries.forEach(e => {
+                const pg = firstPage + e.tp;
+                doc.setPage(pg);
+                const dest = destMap.get(e.uid);
+                const lvl = e.level;
+                const size = lvl === 2 ? 10 : lvl === 3 ? 9.2 : 8.6;
+                const bold = lvl === 2;
+                const indent = lvl === 2 ? 0 : lvl === 3 ? 6 : 12;
+                const numW = e.num ? (lvl === 2 ? 8 : lvl === 3 ? 10 : 13) : 0;
+                const by = e.ty + e.th / 2 + size * PT * 0.32 + (lvl === 2 ? 0.6 : 0);
+                const nst = { size, b: false, i: false, color: C.muted, dy: 0 };
+                const tst = { size, b: bold, i: false, color: C.ink, dy: 0 };
+                const pst = { size, b: false, i: false, color: C.ink, dy: 0 };
+                const pageStr = dest ? String(dest.page) : '';
+                const pw = textW(pageStr, pst);
+                const x0 = PAGE.ml + indent;
+                if (e.num) textAt(e.num, x0, by, nst);
+                // judul dipotong bila terlalu panjang
+                let title = e.text;
+                const maxT = CW - indent - numW - pw - 8;
+                if (!unsupported(title)) {
+                    while (title.length > 3 && textW(title, tst) > maxT) title = title.slice(0, -2);
+                    if (title !== e.text) title = title.replace(/\s+$/, '') + '…';
+                }
+                if (unsupported(title)) drawCanvasText(title, tst, x0 + numW, by, Math.min(textW(title, tst), maxT));
+                else textAt(title, x0 + numW, by, tst);
+                const tw = Math.min(textW(title, tst), maxT);
+                // titik pengisi
+                const dotW = textW('.', { size, b: false });
+                const gapStart = x0 + numW + tw + 2, gapEnd = PAGE.w - PAGE.mr - pw - 2;
+                if (gapEnd - gapStart > 4) {
+                    const unit = textW('. ', nst);
+                    const n = Math.floor((gapEnd - gapStart) / unit);
+                    const dots = '. '.repeat(n).trimEnd();
+                    if (dots) textAt(dots, gapEnd - textW(dots, nst), by, { ...nst, color: C.faint });
+                }
+                textAt(pageStr, PAGE.w - PAGE.mr - pw, by, pst);
+                if (dest) doc.link(PAGE.ml + indent - 1, e.ty, CW - indent + 1, e.th, { pageNumber: dest.page, top: Math.max(0, dest.y - 3) });
+            });
+        }
+
+        /* ---------- header / footer ---------- */
+        function drawHeadersFooters(m, total) {
+            for (let p = 2; p <= total; p++) {
+                doc.setPage(p);
+                const hs = { size: 8, b: false, i: false, color: C.muted, dy: 0 };
+                let t = m.title;
+                while (t.length > 3 && textW(t, hs) > CW * 0.8) t = t.slice(0, -2);
+                if (t !== m.title) t += '…';
+                if (unsupported(t)) drawCanvasText(t, hs, PAGE.ml, 14, textW(t, hs)); else textAt(t, PAGE.ml, 14, hs);
+                // kanan atas: nama aplikasi, berlink ke situs
+                const wk = APP_NAME, wkW = textW(wk, hs);
+                textAt(wk, PAGE.w - PAGE.mr - wkW, 14, { ...hs, color: C.link });
+                doc.link(PAGE.w - PAGE.mr - wkW, 10.8, wkW, 4.6, { url: APP_URL });
+                doc.setDrawColor(...C.line); doc.setLineWidth(0.25); doc.line(PAGE.ml, 17, PAGE.w - PAGE.mr, 17);
+                doc.line(PAGE.ml, PAGE.h - 15, PAGE.w - PAGE.mr, PAGE.h - 15);
+                const fs = { size: 7.6, b: false, i: false, color: C.muted, dy: 0 };
+                // kiri bawah: tautan ke artikelnya (bukan revisi/diff)
+                let left = m.articleLabel;
+                while (left.length > 8 && textW(left, fs) > CW * 0.62) left = left.slice(0, -2);
+                if (left !== m.articleLabel) left += '…';
+                const leftW = textW(left, fs);
+                if (unsupported(left)) drawCanvasText(left, { ...fs, color: C.link }, PAGE.ml, PAGE.h - 10.5, leftW);
+                else textAt(left, PAGE.ml, PAGE.h - 10.5, { ...fs, color: C.link });
+                doc.link(PAGE.ml, PAGE.h - 14, leftW, 5, { url: m.articleUrl });
+                const right = `${T.pageWord} ${p} ${T.ofWord} ${total}`;
+                textAt(right, PAGE.w - PAGE.mr - textW(right, fs), PAGE.h - 10.5, fs);
+            }
+        }
+
+        /* ---------- halaman atribusi ---------- */
+        function drawAttribution(m, contrib, images, includeAll) {
+            const att = { level: 2, text: T.attrTitle, uid: 'attr', id: '' };
+            newPage();
+            drawHeading(att);
+            const sub = txt => { ensure(16); y += 2; para([{ text: txt }], { size: 10.4, b: true, color: C.head3, justify: false, after: 1.4, keep: 18 }); };
+            sub(T.textSrc);
+            para([{ text: T.textSrcBody + ' ' }, { text: m.historyUrl, href: m.historyUrl }], { size: 9, justify: false, after: 2 });
+            if (includeAll && contrib && contrib.names.length) {
+                sub(T.contributors);
+                let tail = '';
+                if (contrib.more) tail = ' — ' + T.contribMore.replace('{n}', '…');
+                if (contrib.anon) tail += (tail ? '; ' : ' — ') + T.contribAnon.replace('{n}', contrib.anon);
+                para([{ text: contrib.names.join(', ') + tail }], { size: 7.4, color: C.muted, justify: false, lead: 1.4, after: 2 });
+            }
+            const used = images.filter(e => e.ok && e.title);
+            if (includeAll && used.length) {
+                sub(T.images);
+                para([{ text: T.imagesBody }], { size: 8.4, color: C.muted, justify: false, after: 1.6 });
+                used.forEach((e, i) => {
+                    const href = `https://${e.repo === 'commons' ? 'commons.wikimedia.org' : m.host}/wiki/${encodeURIComponent(e.title.replace(/ /g, '_')).replace(/%3A/g, ':')}`;
+                    const meta = e.meta || {};
+                    const runs = [{ text: e.title.replace(/^[^:]+:/, ''), href, b: false }];
+                    const bits = [meta.author, meta.license].filter(Boolean);
+                    runs.push({ text: ' — ' + (bits.length ? bits.join(' — ') : T.unknown) });
+                    para(runs, { size: 7.6, x: PAGE.ml + 8, width: CW - 8, marker: (i + 1) + '.', markerRight: PAGE.ml + 6.5, justify: false, after: 0.7, lead: 1.38 });
+                });
+            }
+            return att;
+        }
+
+        /* =====================================================================
+           Edisi Abstract Wikipedia: isi dirender server lewat abstractwiki_fetch_section
+           (bahasa dinyatakan sebagai kode Wikifunctions, mis. en = Z1002)
+           ===================================================================== */
+        const ZID_LANG = { en: 'Z1002', ar: 'Z1001', es: 'Z1003', fr: 'Z1004', ru: 'Z1005', zh: 'Z1006', id: 'Z1078', de: 'Z1430', pt: 'Z1037', it: 'Z1787', nl: 'Z1157', tr: 'Z1237', ms: 'Z1531', jv: 'Z1362', ja: 'Z1830', ko: 'Z1643', hi: 'Z1820', pl: 'Z1025', sv: 'Z1592', uk: 'Z1332', vi: 'Z1048', th: 'Z1851', fa: 'Z1728', he: 'Z1186', cs: 'Z1062', el: 'Z1827', hu: 'Z1513', ro: 'Z1664', ca: 'Z1789', da: 'Z1061', fi: 'Z1051', no: 'Z1021', su: 'Z1471', tl: 'Z1844' };
+        const escHtml = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+        async function abstractLangZid(code, signal) {
+            if (ZID_LANG[code]) return ZID_LANG[code];
+            let name = code;
+            try { name = new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code; } catch (e) { }
+            try {
+                const j = await apiGet('https://www.wikifunctions.org/w/api.php', { action: 'query', list: 'wikilambdasearch_labels', wikilambdasearch_search: name, wikilambdasearch_type: 'Z60', wikilambdasearch_language: 'en' }, signal);
+                const hit = ((j.query || {}).wikilambdasearch_labels || []).find(r => r.label === name);
+                if (hit) return hit.page_title;
+            } catch (e) { if (e && e.name === 'AbortError') throw e; }
+            throw new UserError('errAbsLang', { l: code });
+        }
+
+        async function wikidataLabels(ids, lang, signal) {
+            const out = new Map();
+            try {
+                const j = await apiGet('https://www.wikidata.org/w/api.php', { action: 'wbgetentities', ids: ids.slice(0, 50).join('|'), props: 'labels', languages: lang === 'en' ? 'en' : `${lang}|en`, languagefallback: '1' }, signal);
+                for (const [id, ent] of Object.entries(j.entities || {})) {
+                    const l = ent.labels && (ent.labels[lang] || ent.labels.en);
+                    if (l && l.value) out.set(id, l.value);
+                }
+            } catch (e) { if (e && e.name === 'AbortError') throw e; }
+            return out;
+        }
+
+        async function fetchAbstractArticle(info, ui, signal) {
+            ui.stage(tr('stCheck'), 0.02);
+            const qr = await apiGet(info.api, { action: 'query', prop: 'info|revisions', rvprop: 'ids|content', rvslots: 'main', titles: info.title }, signal);
+            const page = (qr.query.pages || [])[0];
+            if (!page || page.missing || page.invalid) throw new UserError('errNotFound');
+            let content = null;
+            try { content = JSON.parse(page.revisions[0].slots.main.content); } catch (e) { }
+            const secs = content && content.sections ? Object.entries(content.sections).sort((a, b) => (a[1].index || 0) - (b[1].index || 0)) : [];
+            if (!secs.length) throw new UserError('errAbsEmpty');
+            const qid = info.title;
+
+            ui.stage(tr('stDownload'), 0.06);
+            // satu bahasa: kumpulkan HTML tiap bagian; "Content pending" = placeholder tanpa teks sungguhan
+            const render = async lang => {
+                const zid = await abstractLangZid(lang, signal);
+                const labels = await wikidataLabels([qid, ...secs.map(s => s[0])], lang, signal);
+                let html = '', got = 0, text = 0;
+                for (let i = 0; i < secs.length; i++) {
+                    throwIfAborted(signal);
+                    const sid = secs[i][0];
+                    let res = null;
+                    try {
+                        const j = await apiGet(info.api, { action: 'abstractwiki_fetch_section', abstractwiki_fetch_section_topic: qid, abstractwiki_fetch_section_section: sid, abstractwiki_fetch_section_language: zid }, signal);
+                        res = (j.abstractwiki_fetch_section || {})[sid];
+                    } catch (e) { if (e && e.name === 'AbortError') throw e; }
+                    const parts = (Array.isArray(res) ? res : []).filter(r => r && r.success && r.value && stripHtml(r.value).toLowerCase() !== 'content pending').map(r => r.value);
+                    if (!parts.length) continue;
+                    if (parts.some(v => stripHtml(v))) text++;
+                    got++;
+                    if (i > 0) html += `<h2>${escHtml(labels.get(sid) || sid)}</h2>`;
+                    html += parts.join('\n');
+                }
+                return { html, text, labels };
+            };
+            let r = await render(info.lang);
+            if (!r.text && info.lang !== 'en') {
+                ui.log(tr('logAbsFallback', { l: info.lang }));
+                info.lang = 'en';                                // PDF mengikuti bahasa isi yang benar-benar dipakai
+                r = await render('en');
+            }
+            if (!r.text) throw new UserError('errAbsNoText', { l: info.lang });
+            return {
+                page, html: `<div class="mw-parser-output">${r.html}</div>`, title: qid,
+                revid: page.revisions[0].revid || page.lastrevid, plainTitle: r.labels.get(qid) || qid
+            };
+        }
+
+        /* =====================================================================
+           Alur pembuatan PDF
+           ===================================================================== */
+        let opts = {};
+
+        async function buildPdf(info, options, ui, signal) {
+            opts = options;
+            const t0 = performance.now();
+            const { jsPDF } = window.jspdf || {};
+            if (!jsPDF) throw new UserError('errJsPdf');
+
+            let page, html, title, revid, plainTitle;
+            if (info.abstract) {
+                /* 1-2. edisi Abstract Wikipedia */
+                ({ page, html, title, revid, plainTitle } = await fetchAbstractArticle(info, ui, signal));
+            } else {
+                /* 1. periksa artikel */
+                ui.stage(tr('stCheck'), 0.02);
+                const q = {
+                    action: 'query', redirects: '1', prop: 'info|pageprops', inprop: 'url', ppprop: 'disambiguation'
+                };
+                if (info.oldid) q.revids = info.oldid; else if (info.curid) q.pageids = info.curid; else q.titles = info.title;
+                const qr = await apiGet(info.api, q, signal);
+                page = (qr.query.pages || [])[0];
+                if (page && page.special) throw new UserError('errSpecial');
+                if (!page || page.missing || page.invalid || (qr.query.badrevids)) throw new UserError('errNotFound');
+                if (page.ns !== 0) throw new UserError('errNs');
+                if (page.pageprops && page.pageprops.disambiguation !== undefined) throw new UserError('errDisamb');
+
+                /* 2. unduh artikel */
+                ui.stage(tr('stDownload'), 0.06);
+                const pq = { action: 'parse', prop: 'text|displaytitle|revid', disableeditsection: '1', disablelimitreport: '1', disabletoc: '1' };
+                if (info.oldid) pq.oldid = info.oldid; else pq.pageid = String(page.pageid);
+                const pr = await apiGet(info.api, pq, signal);
+                html = pr.parse.text;
+                title = pr.parse.title || page.title;
+                revid = pr.parse.revid || page.lastrevid;
+                plainTitle = stripHtml(pr.parse.displaytitle) || title;
+            }
+
+            /* 3. urai isi */
+            ui.stage(tr('stParse'), 0.1);
+            await tick();
+            const parsed = new Parser(html, { host: info.host }).parse();
+            const blocks = groupFigures(parsed.blocks), images = parsed.images;
+            ui.log(tr('logStruct', { h: blocks.filter(b => b.t === 'h').length, i: images.length, t: blocks.filter(b => b.t === 'table' || b.t === 'infobox').length }));
+
+            /* 4. font + gambar */
+            ui.stage(tr('stFonts'), 0.12);
+            let fonts = null;
+            try { fonts = await loadFonts(); } catch (e) { ui.log(tr('logFont')); }
+            throwIfAborted(signal);
+
+            const imgSize = 960;                                         // ketajaman gambar selalu standar (960 px)
+            if (images.length) {
+                ui.stage(tr('stImages', { d: 0, n: images.length }), 0.14);
+                await loadAllImages(images, imgSize, signal, (d, n) => ui.stage(tr('stImages', { d, n }), 0.14 + 0.5 * d / n));
+            }
+            const okImgs = images.filter(e => e.ok).length;
+            if (okImgs < images.length) ui.log(tr('imgFail', { n: images.length - okImgs }));
+
+            ui.stage(tr('stContrib'), 0.66);
+            const [contrib] = await Promise.all([
+                options.contrib ? fetchContributors(info, page.pageid, signal) : null,
+                options.contrib ? fetchImageMeta(images, info.lang, signal) : null
+            ]);
+
+            /* 5. susun PDF */
+            ui.stage(tr('stLayout'), 0.72);
+            await tick();
+            T = L10N[info.lang] || L10N.en;
+            doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+            if (fonts) {
+                doc.addFileToVFS('Roboto-Regular.ttf', fonts.normal); doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+                doc.addFileToVFS('Roboto-Bold.ttf', fonts.bold); doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+                FONT = 'Roboto'; activeRanges = GLYPH_RANGES;
+            } else { FONT = 'helvetica'; activeRanges = LATIN1_RANGES; }
+            glyphCache.clear(); wcache.clear(); destMap = new Map(); pendingLinks = [];
+
+            const dateStr = new Date().toLocaleDateString(T.lang, { day: 'numeric', month: 'long', year: 'numeric' });
+            const enc = encodeURIComponent(title.replace(/ /g, '_')).replace(/%3A/g, ':');
+            const permalink = `https://${info.host}/w/index.php?title=${enc}&oldid=${revid}`;
+            const articleUrl = `https://${info.host}/wiki/${enc}`;                 // tautan artikel (bukan revisi/diff)
+            const articleLabel = `${info.host}/wiki/${title.replace(/ /g, '_')}`;
+            const meta = {
+                title: plainTitle, lang: info.lang, host: info.host, revid, dateStr, permalink, articleUrl, articleLabel,
+                historyUrl: `https://${info.host}/w/index.php?title=${enc}&action=history`
+            };
+            doc.setProperties({ title: `${plainTitle} — Wikipedia`, subject: `Wikipedia (${info.lang})`, author: 'Wikipedia contributors', creator: 'Wikipedia-PDF' });
+
+            drawCover(meta);
+
+            // Daftar isi: entri dari subjudul + halaman atribusi
+            const depth = 4;                                             // Daftar Isi selalu sampai subjudul tingkat 4
+            const heads = blocks.filter(b => b.t === 'h');
+            const entries = heads.filter(h => h.level <= depth).map(h => ({ level: h.level, text: h.text, num: h.num, uid: h.uid }));
+            entries.push({ level: 2, text: T.attrTitle, num: '', uid: 'attr' });
+            const tocPages = planToc(entries);
+            for (let i = 0; i < tocPages; i++) doc.addPage();
+            doc.addPage(); y = PAGE.mt;                                  // awal isi artikel
+
+            // isi
+            const nextNeed = nb => {
+                if (!nb) return 22;
+                switch (nb.t) {
+                    case 'fig': return (nb.img.ok ? fitImage(nb.img, Math.min(CW, 150), 108).h : 34) + 8;
+                    case 'grid': return 66;
+                    case 'table': return 38;
+                    case 'infobox': return 44;
+                    case 'h': return 34;
+                    default: return 22;
+                }
+            };
+            for (let bi = 0; bi < blocks.length; bi++) {
+                const b = blocks[bi];
+                throwIfAborted(signal);
+                if ((bi + 1) % 25 === 0) { ui.stage(tr('stLayout'), 0.72 + 0.22 * bi / blocks.length); await tick(); }
+                switch (b.t) {
+                    case 'h': drawHeading(b, nextNeed(blocks[bi + 1])); break;
+                    case 'p': {
+                        const o = { justify: !b.hatnote && !b.caption && !b.quote && !b.bold };
+                        if (b.hatnote) Object.assign(o, { size: 8.6, color: C.muted, i: true });
+                        if (b.quote) Object.assign(o, { x: PAGE.ml + 8, width: CW - 16, i: true, color: C.head3, justify: false });
+                        if (b.caption) Object.assign(o, { size: 8, color: C.muted, align: 'center', justify: false });
+                        if (b.bold) Object.assign(o, { b: true, keep: 18, after: 0.8 });
+                        if (b.indent) Object.assign(o, { x: PAGE.ml + b.indent, width: CW - b.indent, justify: false });
+                        para(b.runs, o);
+                        break;
+                    }
+                    case 'list': drawList(b, 0); y += 1.6; break;
+                    case 'refs': drawRefs(b); break;
+                    case 'fig': drawFigure(b.img, b.caption); break;
+                    case 'grid': drawGrid(b); break;
+                    case 'table': drawTable(b); break;
+                    case 'infobox': drawInfobox(b); break;
+                }
+            }
+            drawAttribution(meta, contrib, images, options.contrib);
+
+            /* 6. isi Daftar Isi, tautan, bookmark, header/footer */
+            ui.stage(tr('stFinish'), 0.96);
+            drawToc(entries, 2);
+            if (options.cite) {
+                for (const L of pendingLinks) {
+                    const d = destMap.get(normId(L.id));
+                    if (!d) continue;
+                    doc.setPage(L.page);
+                    doc.link(L.x, L.y, L.w, L.h, { pageNumber: d.page, top: Math.max(0, d.y - 2) });
+                }
+            } else {
+                for (const L of pendingLinks) {
+                    if (!/^cite_note/.test(L.id)) {
+                        const d = destMap.get(normId(L.id));
+                        if (d) { doc.setPage(L.page); doc.link(L.x, L.y, L.w, L.h, { pageNumber: d.page, top: Math.max(0, d.y - 2) }); }
+                    }
+                }
+            }
+            const total = doc.getNumberOfPages();
+            drawHeadersFooters(meta, total);
+
+            // bookmark PDF
+            try {
+                const stack = [];
+                const addMark = (lvl, text, pageNo) => {
+                    while (stack.length && stack[stack.length - 1].lvl >= lvl) stack.pop();
+                    const parent = stack.length ? stack[stack.length - 1].node : null;
+                    const node = doc.outline.add(parent, text.slice(0, 120), { pageNumber: pageNo });
+                    stack.push({ lvl, node });
+                };
+                doc.outline.add(null, T.contents, { pageNumber: 2 });
+                entries.forEach(e => { const d = destMap.get(e.uid); if (d) addMark(e.level, (e.num ? e.num + ' ' : '') + e.text, d.page); });
+            } catch (e) { console.warn('Bookmark dilewati:', e); }
+
+            doc.setPage(1);
+            const blob = doc.output('blob');
+            return {
+                blob, title: plainTitle, pages: total, images: okImgs, imagesTotal: images.length,
+                size: blob.size, secs: (performance.now() - t0) / 1000, tocPages,
+                tables: blocks.filter(b => b.t === 'table' || b.t === 'infobox').length, headings: heads.length, lang: info.lang
+            };
+        }
+
+        /* =====================================================================
+           Antarmuka
+           ===================================================================== */
+        const els = { form: $('form'), url: $('url'), status: $('urlStatus'), go: $('go'), cancel: $('cancel'), err: $('errorBox'), prog: $('progressCard'), bar: $('barFill'), stage: $('stage'), log: $('log'), res: $('resultCard') };
+        let controller = null, lastUrl = null;
+
+        let errState = null;   // { key, vars, warn } atau { raw }
+        function paintError() {
+            if (!errState) return;
+            els.err.className = 'banner ' + (errState.warn ? 'warn' : 'err');
+            els.err.textContent = errState.key ? tr(errState.key, errState.vars) : errState.raw;
+        }
+        function showError(keyOrErr, warn, vars) {
+            errState = keyOrErr instanceof UserError ? { key: keyOrErr.key, vars: keyOrErr.vars, warn }
+                     : (typeof keyOrErr === 'string' && UI.id[keyOrErr] !== undefined) ? { key: keyOrErr, vars, warn }
+                     : { raw: String(keyOrErr), warn };
+            paintError();
+        }
+        function clearError() { errState = null; els.err.className = 'banner err hidden'; els.err.textContent = ''; }
+
+        function checkUrl() {
+            const v = els.url.value.trim();
+            els.status.className = ''; els.status.textContent = '';
+            if (!v) return;
+            try {
+                const i = parseWikiUrl(v);
+                els.status.className = 'ok';
+                els.status.textContent = tr(i.abstract ? 'detectedAbs' : 'detected', { lang: i.lang }) + (i.title ? ` · ${i.title}` : '') + (i.oldid ? tr('detectedRev', { n: i.oldid }) : '');
+            } catch (e) {
+                els.status.className = 'bad';
+                els.status.textContent = e instanceof UserError ? e.message : tr('errBadUrl');
+            }
+        }
+        els.url.addEventListener('input', checkUrl);
+
+        const ui = {
+            stage(text, frac) { els.stage.textContent = text; if (frac != null) els.bar.style.width = Math.round(frac * 100) + '%'; },
+            log(text) { const li = document.createElement('li'); li.textContent = text; els.log.appendChild(li); els.log.scrollTop = els.log.scrollHeight; }
+        };
+
+        els.cancel.addEventListener('click', () => { if (controller) controller.abort(); });
+
+        els.form.addEventListener('submit', async ev => {
+            ev.preventDefault();
+            clearError();
+            els.res.classList.add('hidden');
+            let info;
+            try { info = parseWikiUrl(els.url.value); }
+            catch (e) { showError(e instanceof UserError ? e : 'errBadUrl'); els.url.focus(); return; }
+
+            controller = new AbortController();
+            els.log.innerHTML = '';
+            els.prog.classList.remove('hidden');
+            els.go.disabled = true;
+            ui.stage(tr('stPrep'), 0);
+            if (NON_LATIN_LANGS.has(info.lang)) ui.log(tr('logNonLatin'));
+            try {
+                const out = await buildPdf(info, {
+                    cite: $('optCite').checked, contrib: $('optContrib').checked
+                }, ui, controller.signal);
+                if (lastUrl) URL.revokeObjectURL(lastUrl);
+                lastUrl = URL.createObjectURL(out.blob);
+                const fname = (out.title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, '_').slice(0, 80) || 'wikipedia') + `_${out.lang}.pdf`;
+                $('resTitle').textContent = out.title;
+                $('dl').href = lastUrl; $('dl').setAttribute('download', fname);
+                $('open').href = lastUrl;
+                lastOut = out;
+                paintResult();
+                els.prog.classList.add('hidden');
+                els.res.classList.remove('hidden');
+                els.res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } catch (e) {
+                els.prog.classList.add('hidden');
+                if (e && e.name === 'AbortError') showError('errCancelled', true);
+                else if (e instanceof UserError) showError(e);
+                else if (e instanceof TypeError && /fetch|network/i.test(e.message)) showError('errNetwork');
+                else { console.error(e); showError('errGeneric', false, { m: e && e.message ? e.message : String(e) }); }
+            } finally {
+                els.go.disabled = false; controller = null;
+            }
+        });
+
+        /* ---------- hasil + bahasa antarmuka ---------- */
+        let lastOut = null;
+        function paintResult() {
+            const out = lastOut;
+            if (!out) return;
+            const mb = out.size / 1048576;
+            $('stats').innerHTML = [
+                [out.pages, tr('sPages')], [out.headings, tr('sHeads')], [`${out.images}/${out.imagesTotal}`, tr('sImages')],
+                [mb >= 1 ? mb.toFixed(1) + ' MB' : Math.round(out.size / 1024) + ' KB', tr('sSize')], [out.secs.toFixed(1) + ' ' + tr('secUnit'), tr('sTime')]
+            ].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join('');
+            $('resNotes').innerHTML = '';
+            const notes = [tr('noteToc', { n: out.tocPages })];
+            if (out.images < out.imagesTotal) notes.push(tr('imgFail', { n: out.imagesTotal - out.images }));
+            notes.forEach(t => { const li = document.createElement('li'); li.textContent = t; $('resNotes').appendChild(li); });
+        }
+
+        function applyLang() {
+            document.documentElement.lang = uiLang;
+            document.title = tr('title');
+            $('metaDesc').setAttribute('content', tr('metaDesc'));
+            document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
+            document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = tr(el.dataset.i18nHtml); });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = tr(el.dataset.i18nPlaceholder); });
+            document.querySelectorAll('#langsw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === uiLang)));
+            checkUrl(); paintError(); paintResult();
+        }
+        document.querySelectorAll('#langsw button').forEach(b => b.addEventListener('click', () => {
+            if (b.dataset.lang === uiLang) return;
+            uiLang = b.dataset.lang;
+            try { localStorage.setItem('wikipedia-pdf-lang', uiLang); } catch (e) { }
+            applyLang();
+        }));
+        applyLang();
+
+        /* ---------- URL dari query string: ?url=<URL Wikipedia>[&auto=0] ---------- */
+        (() => {
+            const q = new URLSearchParams(location.search);
+            let raw = (q.get('url') || '').trim();
+            if (!raw) return;
+            // ?url=https://...&oldid=123 tanpa encoding: oldid/curid terbaca sebagai parameter milik halaman ini
+            for (const k of ['oldid', 'curid']) {
+                const v = q.get(k);
+                if (v && !new RegExp('[?&]' + k + '=').test(raw)) raw += (raw.includes('?') ? '&' : '?') + k + '=' + encodeURIComponent(v);
+            }
+            els.url.value = raw;
+            checkUrl();
+            if (q.get('auto') === '0' || els.status.className !== 'ok') return;
+            els.form.requestSubmit();
+        })();
+    })();
+    </script>
+</body>
+
+</html>
