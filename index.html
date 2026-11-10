@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wikipedia-PDF — Artikel Wikipedia ke PDF yang tertata</title>
-    <meta name="description" id="metaDesc" content="Ubah artikel Wikipedia menjadi PDF bertata letak rapi dengan Daftar Isi berlink, gambar, tabel, dan referensi — bukan hasil cetak halaman.">
+    <title>Wikipedia-PDF — Artikel Wikipedia jadi buklet PDF</title>
+    <meta name="description" id="metaDesc" content="Ubah artikel Wikipedia menjadi buklet PDF yang rapi, lengkap dengan Daftar Isi berlink, gambar, tabel, dan referensi — bukan hasil cetak halaman.">
     <style>
         :root {
             --bg: #f3f6fc; --surface: #ffffff; --ink: #0c1a36; --muted: #526080; --line: #dde4f1;
@@ -110,7 +110,7 @@
     <main class="wrap">
         <section class="hero">
             <span class="badge" data-i18n="badge">Bukan cetak halaman</span>
-            <h1 data-i18n="h1">Artikel Wikipedia jadi PDF yang tertata.</h1>
+            <h1 data-i18n="h1">Artikel Wikipedia jadi buklet PDF.</h1>
             <p class="lead" data-i18n="lead">Tempel satu URL Wikipedia. PDF disusun langsung dari isi artikel: Daftar Isi berlink ke subjudul di dalam PDF, gambar dengan keterangan, tabel, referensi, dan halaman lisensi.</p>
             <details class="qnote">
                 <summary data-i18n="qTitle">Query</summary>
@@ -208,9 +208,9 @@
            ===================================================================== */
         const UI = {
             id: {
-                title: 'Wikipedia-PDF — Artikel Wikipedia ke PDF yang tertata',
-                metaDesc: 'Ubah artikel Wikipedia menjadi PDF bertata letak rapi dengan Daftar Isi berlink, gambar, tabel, dan referensi — bukan hasil cetak halaman.',
-                tag: 'prototipe · jsPDF', badge: 'Bukan cetak halaman', h1: 'Artikel Wikipedia jadi PDF yang tertata.',
+                title: 'Wikipedia-PDF — Artikel Wikipedia jadi buklet PDF',
+                metaDesc: 'Ubah artikel Wikipedia menjadi buklet PDF yang rapi, lengkap dengan Daftar Isi berlink, gambar, tabel, dan referensi — bukan hasil cetak halaman.',
+                tag: 'prototipe · jsPDF', badge: 'Bukan cetak halaman', h1: 'Artikel Wikipedia jadi buklet PDF.',
                 lead: 'Tempel satu URL Wikipedia. PDF disusun langsung dari isi artikel: Daftar Isi berlink ke subjudul di dalam PDF, gambar dengan keterangan, tabel, referensi, dan halaman lisensi.',
                 qNote: '<p><b>Query:</b> URL bisa dikirim lewat alamat halaman ini, jadi kolom terisi otomatis dan PDF langsung dibuat.</p><ul><li><code>?url=https://id.wikipedia.org/wiki/Indonesia</code></li><li><code>&amp;oldid=123456</code> untuk revisi tertentu</li><li><code>&amp;auto=0</code> hanya mengisi kolom, tanpa langsung membuat PDF</li><li><code>&amp;lang=id</code> atau <code>&amp;lang=en</code> untuk bahasa antarmuka (default: en)</li></ul><p style="margin-top:10px"><b>Abstract Wikipedia</b> (<code>?url=https://abstract.wikipedia.org/wiki/Q252</code>)</p><ul><li>Hanya halaman Q-id; tidak ada subjudul bertingkat, tabel, infobox, maupun referensi, dan <code>oldid</code> tidak didukung. Isinya hanya paragraf dan gambar yang sudah dihasilkan Abstract Wikipedia, jadi PDF jauh lebih pendek dari artikel biasa.</li><li>Bahasa teks diatur dengan <code>?uselang=</code> <em>di dalam</em> URL abstract (default <code>en</code>), terpisah dari <code>&amp;lang=</code> yang hanya untuk antarmuka. Contoh: <code>?url=https://abstract.wikipedia.org/wiki/Q252%3Fuselang%3Did</code></li><li>Teks dibuat oleh server Abstract Wikipedia dari fungsi Wikifunctions, bukan oleh Wikipedia-PDF. Bahasa selain English sering belum lengkap atau kosong ("Content pending"). Jika tidak ada teks sama sekali dalam bahasa yang diminta, PDF otomatis memakai <b>English</b> (dicatat di log), dan bahasa PDF mengikuti bahasa yang dipakai.</li><li>Bahasa yang dikenali: en, id, ms, jv, su, tl, ar, fa, he, tr, hi, th, vi, zh, ja, ko, es, fr, pt, it, ca, ro, de, nl, sv, da, no, fi, ru, uk, pl, cs, hu, el. Kode lain dicari otomatis di Wikifunctions.</li><li>Layanan bersifat internal dan kadang membatasi permintaan (HTTP 429), sehingga sebagian bagian bisa terlewat; coba lagi beberapa saat kemudian.</li></ul>',
                 qTitle: 'Parameter query (opsional)',
@@ -242,6 +242,7 @@
                 stFonts: 'Memuat font…', stImages: 'Mengunduh gambar ({d}/{n})…', stContrib: 'Mengambil kontributor dan lisensi gambar…',
                 stLayout: 'Menyusun halaman…', stFinish: 'Menyelesaikan Daftar Isi dan tautan…',
                 logStruct: 'Struktur: {h} subjudul, {i} gambar, {t} tabel.',
+                logMath: 'Rumus matematika dirasterisasi: {n}.',
                 logFont: 'Font Roboto gagal dimuat, memakai font bawaan (karakter non-Latin-1 digambar sebagai gambar).',
                 imgFail: '{n} gambar gagal dimuat dan diganti kotak penanda.',
                 logNonLatin: 'Bahasa beraksara non-Latin: teks digambar sebagai gambar sehingga tidak bisa dicari dan file lebih besar.',
@@ -249,9 +250,9 @@
                 noteToc: 'Daftar Isi memakai {n} halaman; klik tiap baris untuk melompat ke subjudul di dalam PDF.'
             },
             en: {
-                title: 'Wikipedia-PDF — Wikipedia articles as well-structured PDFs',
-                metaDesc: 'Turn a Wikipedia article into a neatly laid-out PDF with a linked table of contents, images, tables and references — not a page printout.',
-                tag: 'prototype · jsPDF', badge: 'Not a page printout', h1: 'Wikipedia articles as well-structured PDFs.',
+                title: 'Wikipedia-PDF — Wikipedia articles as PDF booklets',
+                metaDesc: 'Turn a Wikipedia article into a neat PDF booklet with a linked table of contents, images, tables and references — not a page printout.',
+                tag: 'prototype · jsPDF', badge: 'Not a page printout', h1: 'Wikipedia articles as PDF booklets.',
                 lead: 'Paste one Wikipedia URL. The PDF is built directly from the article content: a table of contents linking to headings inside the PDF, images with captions, tables, references, and a license page.',
                 qNote: '<p><b>Query:</b> the URL can be passed in this page\'s address, so the field is filled in and the PDF is created right away.</p><ul><li><code>?url=https://en.wikipedia.org/wiki/Indonesia</code></li><li><code>&amp;oldid=123456</code> for a specific revision</li><li><code>&amp;auto=0</code> only fills the field, without creating the PDF</li><li><code>&amp;lang=id</code> or <code>&amp;lang=en</code> for the interface language (default: en)</li></ul><p style="margin-top:10px"><b>Abstract Wikipedia</b> (<code>?url=https://abstract.wikipedia.org/wiki/Q252</code>)</p><ul><li>Q-id pages only; no nested headings, tables, infoboxes or references, and <code>oldid</code> is not supported. The content is just the paragraphs and images Abstract Wikipedia has generated, so the PDF is much shorter than a regular article.</li><li>The text language is set with <code>?uselang=</code> <em>inside</em> the abstract URL (default <code>en</code>), separate from <code>&amp;lang=</code>, which only controls the interface. Example: <code>?url=https://abstract.wikipedia.org/wiki/Q252%3Fuselang%3Did</code></li><li>The text is generated by the Abstract Wikipedia server from Wikifunctions functions, not by Wikipedia-PDF. Languages other than English are often incomplete or empty ("Content pending"). If there is no text at all in the requested language, the PDF automatically uses <b>English</b> (noted in the log), and the PDF language follows the language actually used.</li><li>Recognised languages: en, id, ms, jv, su, tl, ar, fa, he, tr, hi, th, vi, zh, ja, ko, es, fr, pt, it, ca, ro, de, nl, sv, da, no, fi, ru, uk, pl, cs, hu, el. Other codes are looked up in Wikifunctions automatically.</li><li>The service is internal and sometimes rate-limits requests (HTTP 429), so some sections may be skipped; try again a little later.</li></ul>',
                 qTitle: 'Query parameters (optional)',
@@ -283,6 +284,7 @@
                 stFonts: 'Loading fonts…', stImages: 'Downloading images ({d}/{n})…', stContrib: 'Fetching contributors and image licenses…',
                 stLayout: 'Laying out pages…', stFinish: 'Finishing the table of contents and links…',
                 logStruct: 'Structure: {h} headings, {i} images, {t} tables.',
+                logMath: 'Math formulas rasterized: {n}.',
                 logFont: 'The Roboto font failed to load; using the built-in font (characters outside Latin-1 are drawn as images).',
                 imgFail: '{n} images failed to load and were replaced by placeholder boxes.',
                 logNonLatin: 'Non-Latin script: the text is drawn as images, so it cannot be searched and the file is larger.',
@@ -462,6 +464,7 @@
                 this.doc = new DOMParser().parseFromString(html, 'text/html');
                 this.blocks = [];
                 this.images = new Map();              // src -> entry
+                this.maths = new Map();               // mml -> entry rumus (dirasterisasi dari MathML)
                 this.pendingInfobox = [];
                 this.seenHeading = false;
                 this.counters = [0, 0, 0, 0, 0];     // h2..h6
@@ -486,10 +489,8 @@
                         continue;
                     }
                     if (ch.classList.contains('mwe-math-element')) {
-                        const an = ch.querySelector('annotation');
-                        const im = ch.querySelector('img');
-                        const t = (an ? an.textContent : (im ? im.getAttribute('alt') : '') || '').replace(/^\s*\{\\displaystyle\s*/, '').replace(/\}\s*$/, '').trim();
-                        if (t) this.addText(out, t, { ...st, i: true });
+                        // MediaWiki kini mengirim MathML murni (tanpa TeX/annotation/img): rumus dirasterisasi lewat browser
+                        out.push({ math: this.mathEntry(ch) });
                         continue;
                     }
                     if ((tag === 'sup' || tag === 'span') && (ch.classList.contains('reference') || ch.classList.contains('mw-ref'))) {
@@ -528,13 +529,14 @@
                 this.collect(el, { ...(extra || {}) }, out);
                 return out;
             }
-            hasText(runs) { return runs.some(r => !r.br && r.text.trim()); }
+            hasText(runs) { return runs.some(r => !r.br && (r.math || (r.text || '').trim())); }
 
             /* ---------- gambar ---------- */
-            imageEntry(img) {
+            imageEntry(img, opts) {
+                const inCell = !!(opts && opts.cell);          // gambar di dalam sel tabel: foto/bendera/logo kecil tetap dipakai
                 const w = parseInt(img.getAttribute('width') || '0', 10);
                 const h = parseInt(img.getAttribute('height') || '0', 10);
-                if (w && w < 48) return null;                    // ikon kecil
+                if (w && w < (inCell ? 8 : 48)) return null;     // ikon kecil
                 let src = img.getAttribute('src') || '';
                 if (!src) return null;
                 if (src.startsWith('//')) src = 'https:' + src;
@@ -561,9 +563,33 @@
                         src, wAttr: w, hAttr: h,
                         fileW: parseInt(img.getAttribute('data-file-width') || '0', 10),
                         fileH: parseInt(img.getAttribute('data-file-height') || '0', 10),
-                        title, repo, ok: false, data: null, pw: 0, ph: 0
+                        title, repo, ok: false, data: null, pw: 0, ph: 0, small: inCell
                     };
                     this.images.set(key, e);
+                } else if (!inCell) e.small = false;            // dipakai juga sebagai gambar biasa: ambil resolusi penuh
+                return e;
+            }
+
+            mathEntry(el) {
+                const node = el.localName === 'math' ? el : (el.querySelector('math') || el);
+                const clone = node.cloneNode(true);
+                ['id', 'about', 'data-mw'].forEach(a => clone.removeAttribute(a));
+                if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/1998/Math/MathML');
+                const mml = new XMLSerializer().serializeToString(clone);   // XML valid (outerHTML memakai &nbsp; dll. yang merusak SVG)
+                let e = this.maths.get(mml);
+                if (!e) {
+                    const an = el.querySelector('annotation');
+                    const cls = (el.getAttribute('class') || '') + ' ' + (node.getAttribute('class') || '');
+                    e = {
+                        mml, math: true, src: 'math#' + this.maths.size,
+                        block: /mwe-math-element-block/.test(cls) || node.getAttribute('display') === 'block',
+                        // cadangan bila rasterisasi gagal: TeX (wiki lama) atau teks MathML apa adanya
+                        txt: (an ? an.textContent : node.textContent).replace(/^\s*\{\\displaystyle\s*/, '').replace(/\}\s*$/, '').replace(/\s+/g, ' ').trim(),
+                        ok: false, data: null, fmt: 'PNG', pw: 0, ph: 0, cssW: 0, cssH: 0
+                    };
+                    // simbol tunggal sebaris (x, t, ω, f(x)...) lebih rapi sebagai teks miring daripada gambar mungil
+                    e.simple = !e.block && e.txt.length > 0 && e.txt.length <= 6 && !node.querySelector('mfrac,msub,msup,msubsup,mover,munder,munderover,msqrt,mroot,mtable,mmultiscripts,mfenced,mspace');
+                    this.maths.set(mml, e);
                 }
                 return e;
             }
@@ -588,6 +614,7 @@
                     }
                     if (/^h[1-6]$/.test(tag)) { this.heading(el); continue; }
                     if (tag === 'p') { this.paragraph(el); continue; }
+                    if (cl.contains('mwe-math-element')) { this.blocks.push({ t: 'p', runs: [{ math: this.mathEntry(el) }] }); continue; }
                     if (tag === 'ul' || tag === 'ol') {
                         if (cl.contains('gallery')) { this.gallery(el); continue; }
                         if (cl.contains('references')) { this.references(el); continue; }
@@ -752,6 +779,7 @@
             table(el) {
                 const cl = el.classList;
                 if (cl.contains('infobox') || cl.contains('sidebar') || cl.contains('vcard') || cl.contains('infobox_v2') || cl.contains('infobox_v3')) { this.infobox(el); return; }
+                if (el.id === 'Container' && cl.contains('searchaux')) { this.positionedTimeline(el); return; }
                 for (const c of cl) if (SKIP_CLASS.has(c)) return;
                 const t = this.tableModel(el);
                 if (t) this.blocks.push(t);
@@ -778,8 +806,15 @@
                         if (c.nodeType === 3) s += cleanText(c.nodeValue).replace(/[ \t\r\n\f]+/g, ' ');
                         else if (c.nodeType === 1 && !skipEl(c)) {
                             const t = c.localName;
-                            if (t === 'br') s += '\n';
-                            else if (t === 'li') { s += '\n• '; w(c); }
+                            if (c.classList.contains('mwe-math-element')) { /* rumus digambar sebagai gambar sel */ }
+                            else if (t === 'br') s += '\n';
+                            else if (t === 'li') {
+                                // hlist (daftar mendatar, mis. sidebar/navbox) digabung dengan " · "; butir kosong dibuang
+                                const save = s; s = ''; w(c);
+                                const item = s.split('\n').map(x => x.trim()).filter(Boolean).join(' ');
+                                s = save;
+                                if (item) s += c.closest('.hlist') ? (s && !/\n$/.test(s) ? ' · ' : '') + item : (c.querySelector('li, .hlist') ? '\n' : '\n• ') + item;   // pembungkus yang berisi daftar lain tidak diberi butir
+                            }
                             else if (/^(p|div|tr|dd|dt|ul|ol|table|caption)$/.test(t)) { s += '\n'; w(c); s += '\n'; }
                             else if (t === 'img' || t === 'style' || t === 'script') { /* gambar dalam sel dilewati */ }
                             else if (t === 'sup' && /^[123]$/.test(c.textContent.trim())) s += { 1: '¹', 2: '²', 3: '³' }[c.textContent.trim()];
@@ -791,12 +826,45 @@
                 return s.split('\n').map(x => x.trim()).filter(Boolean).join('\n');
             }
 
+            cellImages(td) {
+                const out = [];
+                td.querySelectorAll('img').forEach(im => {
+                    if (skipEl(im) || im.closest('sup')) return;
+                    const e = this.imageEntry(im, { cell: true });
+                    if (!e) return;
+                    out.push({ e, w: parseInt(im.getAttribute('width') || '0', 10), h: parseInt(im.getAttribute('height') || '0', 10) });
+                });
+                return out;
+            }
+
             cellLink(td, text) {
                 const as = [...td.querySelectorAll('a[href]')].filter(a => !skipEl(a) && !a.closest('sup') && !a.classList.contains('new'));
                 if (as.length !== 1) return null;
                 const a = as[0];
                 if (a.textContent.trim().length < text.length * 0.5) return null;
                 return resolveHref(a.getAttribute('href'), this.ctx.host);
+            }
+
+            // templat "Nature timeline": isinya div berposisi absolut (tidak bisa jadi tabel), jadi diratakan menjadi daftar berurutan dari atas ke bawah
+            positionedTimeline(el) {
+                const title = el.querySelector('#Title');
+                if (title && title.textContent.trim()) this.blocks.push({ t: 'p', runs: [{ text: title.textContent.trim().replace(/\s+/g, ' '), b: true }], bold: true });
+                const items = [];
+                for (const td of el.querySelectorAll('tr > td')) {
+                    if (td.id === 'Title' || td.id === 'Navbox' || td.id === 'Scale') continue;
+                    for (const d of td.querySelectorAll('div, table')) {
+                        const st = d.getAttribute('style') || '';
+                        if (!/position\s*:\s*absolute/i.test(st) || !/top\s*:/i.test(st) || skipEl(d)) continue;
+                        if ([...d.querySelectorAll('div, table')].some(x => /position\s*:\s*absolute/i.test(x.getAttribute('style') || ''))) continue;   // ambil elemen paling dalam saja
+                        const dc = d.cloneNode(true); dc.querySelectorAll('br').forEach(x => x.replaceWith(' '));
+                        const txt = dc.textContent.replace(/[←→\u2190\u2192]/g, '').replace(/\s+/g, ' ').trim();
+                        if (!txt) continue;
+                        const top = parseFloat((st.match(/top\s*:\s*(-?[\d.]+)/i) || [])[1]);
+                        items.push({ top: isNaN(top) ? items.length : top, runs: [{ text: txt }], children: [] });
+                    }
+                }
+                items.sort((x, y) => y.top - x.top);   // top besar = lebih tua: urutkan dari yang tertua
+                if (items.length) this.blocks.push({ t: 'list', ordered: false, start: 1, items });
             }
 
             tableModel(el) {
@@ -830,6 +898,9 @@
                         const cell = { content: text, colSpan: cs, rowSpan: rs, styles };
                         const link = this.cellLink(td, text);
                         if (link) cell.link = link;
+                        const media = this.cellImages(td)
+                            .concat([...td.querySelectorAll('.mwe-math-element')].filter(m => !skipEl(m)).map(m => ({ e: this.mathEntry(m) })));
+                        if (media.length) cell.imgs = media;
                         row.push(cell);
                     }
                     maxCols = Math.max(maxCols, cols);
@@ -893,7 +964,7 @@
                 const root = this.doc.querySelector('.mw-parser-output') || this.doc.body;
                 this.walk(root);
                 this.flushInfobox();
-                return { blocks: this.blocks, images: [...this.images.values()] };
+                return { blocks: this.blocks, images: [...this.images.values()], maths: [...this.maths.values()] };
             }
         }
 
@@ -916,6 +987,7 @@
         }
 
         async function loadImage(e, size, signal) {
+            if (e.small) size = Math.min(size, 250);              // gambar sel tabel ditampilkan kecil: 250 px cukup dan ringan
             for (const url of candidateUrls(e, size)) {
                 throwIfAborted(signal);
                 // batas waktu per permintaan: satu gambar yang macet tidak boleh menahan seluruh proses
@@ -969,6 +1041,43 @@
                 }
             };
             await Promise.all(Array.from({ length: Math.min(5, images.length) }, worker));
+        }
+
+        // Rasterisasi MathML: browser menata rumus, lalu digambar ke canvas lewat SVG foreignObject
+        async function renderMaths(list, signal) {
+            const SCALE = 4;
+            const host = document.createElement('div');
+            host.style.cssText = 'position:absolute;left:-10000px;top:0;white-space:nowrap;font-size:16px;';
+            document.body.appendChild(host);
+            try {
+                for (let i = 0; i < list.length; i++) {
+                    const e = list[i];
+                    throwIfAborted(signal);
+                    if (i % 20 === 19) await tick();
+                    try {
+                        // penanda sebaris selebar nol: bagian bawahnya = garis dasar rumus (untuk menyejajarkan dengan teks)
+                        host.innerHTML = '<span style="display:inline-block;width:0;height:0"></span>' + e.mml;
+                        const el = host.querySelector('math');
+                        if (!el) continue;
+                        const r = el.getBoundingClientRect();
+                        e.base = Math.min(r.height, Math.max(0, host.firstElementChild.getBoundingClientRect().bottom - r.top));
+                        const w = Math.ceil(r.width), h = Math.ceil(r.height);
+                        if (!w || !h) continue;
+                        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:16px;line-height:normal;color:#0c1a36;white-space:nowrap">${e.mml}</div></foreignObject></svg>`;
+                        const img = new Image();
+                        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('math')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+                        const cv = document.createElement('canvas');
+                        cv.width = w * SCALE; cv.height = h * SCALE;
+                        const cx = cv.getContext('2d');
+                        cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+                        cx.drawImage(img, 0, 0, cv.width, cv.height);
+                        e.data = cv.toDataURL('image/png');
+                        e.pw = cv.width; e.ph = cv.height; e.cssW = w; e.cssH = h; e.ok = true;   // e.base = jarak garis dasar dari tepi atas
+                    } catch (err) { if (signal && signal.aborted) throw err; }
+                }
+            } finally { host.remove(); }
+            const bad = list.filter(e => !e.ok);
+            if (bad.length) console.warn('Rumus gagal dirasterisasi:', bad.length);
         }
 
         function stripHtml(s) {
@@ -1061,8 +1170,24 @@
             const chunks = [];
             let cur = null, spaceNext = null;
             const flush = () => { if (cur) { chunks.push(cur); cur = null; } };
-            for (const r of runs) {
+            for (let r of runs) {
                 if (r.br) { flush(); chunks.push({ br: true }); spaceNext = null; continue; }
+                if (r.math) {
+                    const e = r.math;
+                    if (!e.ok || e.simple) { if (!e.txt) continue; r = { text: e.txt, i: /^[A-Za-z\u0370-\u03ff\u2102-\u211d]+$/.test(e.txt) }; }
+                    else {
+                        const st = styleOf(r, base);
+                        const sc = st.size / 9;                         // rumus dirender pada 16px; skala ini menyamakan tinggi-x dengan teks Roboto
+                        let w = e.cssW * 0.2646 * sc, h = e.cssH * 0.2646 * sc;
+                        const maxH = st.size * PT * (e.block ? 2.6 : 1.8);
+                        if (h > maxH) { w *= maxH / h; h = maxH; }
+                        if (base.width && w > base.width) { h *= base.width / w; w = base.width; }
+                        if (!cur) { cur = { atoms: [], w: 0, sp: spaceNext }; spaceNext = null; }
+                        cur.atoms.push({ mathE: e, st, w, h });
+                        cur.w += w;
+                        continue;
+                    }
+                }
                 const st = styleOf(r, base);
                 const key = r.href ? 'u:' + r.href : (r.int ? 'i:' + r.int : null);
                 const parts = r.text.match(/ +|[^ ]+/g) || [];
@@ -1085,6 +1210,11 @@
             let cur = { atoms: [], w: 0, sp: ch.sp };
             const mk = (str, a) => ({ ...a, str, w: textW(str, a.st) });
             for (const a of ch.atoms) {
+                if (a.mathE) {
+                    if (cur.w + a.w > width && cur.atoms.length) { out.push(cur); cur = { atoms: [], w: 0, sp: null }; }
+                    cur.atoms.push(a); cur.w += a.w;
+                    continue;
+                }
                 let buf = '';
                 for (const c of a.str) {
                     const nw = textW(buf + c, a.st);
@@ -1125,7 +1255,7 @@
         }
 
         function layoutLines(runs, o) {
-            return breakLines(buildChunks(runs, { size: o.size, b: o.b, i: o.i, color: o.color }), o.width);
+            return breakLines(buildChunks(runs, { size: o.size, b: o.b, i: o.i, color: o.color, width: o.width }), o.width);
         }
 
         function drawCanvasText(str, st, x, baseY, w) {
@@ -1175,6 +1305,13 @@
             for (const it of line.items) {
                 if (it.sw > 0) cx += it.sw + extra;
                 for (const a of it.ch.atoms) {
+                    if (a.mathE) {
+                        const fs = a.st.size * PT;
+                        doc.addImage(a.mathE.data, a.mathE.fmt, cx, by + a.st.dy - (a.mathE.base || a.mathE.cssH * 0.7) * (a.h / a.mathE.cssH), a.w, a.h, a.mathE.src, 'FAST');
+                        flushLink(link, by); link = null;
+                        cx += a.w;
+                        continue;
+                    }
                     if (a.canvas) drawCanvasText(a.str, a.st, cx, by + a.st.dy, a.w);
                     else textAt(a.str, cx, by + a.st.dy, a.st);
                     if (a.key) {
@@ -1274,13 +1411,23 @@
             return { w: e.pw * s, h: e.ph * s };
         }
         function drawImageBox(e, x, yy, w, h) {
-            doc.addImage(e.data, 'JPEG', x, yy, w, h, e.src, 'FAST');
+            doc.addImage(e.data, e.fmt || 'JPEG', x, yy, w, h, e.src, 'FAST');
             doc.setDrawColor(...C.line); doc.setLineWidth(0.15); doc.rect(x, yy, w, h);
         }
         function placeholder(x, yy, w, h) {
             doc.setFillColor(...C.soft); doc.setDrawColor(...C.line); doc.setLineWidth(0.15);
             doc.rect(x, yy, w, h, 'FD');
             textAt(T.figFail, x + w / 2 - textW(T.figFail, { size: 8, b: false }) / 2, yy + h / 2 + 1, { size: 8, b: false, i: false, color: C.faint, dy: 0 });
+        }
+
+        function drawMathBlock(e) {
+            const sc = BODY / 9.5;
+            let w = e.cssW * 0.2646 * sc, h = e.cssH * 0.2646 * sc;
+            const f = Math.min(1, (CW - 10) / w, 70 / h);
+            w *= f; h *= f;
+            ensure(Math.min(h + 3, PAGE.h - PAGE.mt - PAGE.mb));
+            doc.addImage(e.data, e.fmt, PAGE.ml + (CW - w) / 2, y + 1, w, h, e.src, 'FAST');
+            y += h + 3.2;
         }
 
         function drawFigure(img, caption, opt = {}) {
@@ -1372,7 +1519,62 @@
             doc.addImage(cv.toDataURL('image/png'), 'PNG', cell.x + padL, cell.y + padT, wMm, lines.length * lineMm);
         }
 
+        /* gambar/rumus di dalam sel: ukuran dihitung SEBELUM autoTable supaya lebar kolom dan tinggi baris ikut menyesuaikan */
+        function sizeCellMedia(cfg) {
+            const PXMM = 0.2646;
+            const k = doc.internal.scaleFactor;
+            const lineMm = cfg.fontSize / k * 1.18;
+            const pad = cfg.pad;
+            for (const row of [...(cfg.head || []), ...cfg.body]) {
+                for (const c of row) {
+                    if (!c || typeof c !== 'object' || !c.imgs) continue;
+                    const ok = c.imgs.filter(m => m.e.ok && m.e.pw && m.e.ph);
+                    if (!ok.length) {
+                        const fb = c.imgs.filter(m => m.e.math && m.e.txt).map(m => m.e.txt).join(' ');
+                        if (fb && !String(c.content || '').trim()) c.content = fb;
+                        continue;
+                    }
+                    const hasText = !!String(c.content == null ? '' : c.content).trim();
+                    const hMax = hasText ? lineMm * 1.25 : (cfg.fontSize >= 7 ? 14 : 11);
+                    const items = ok.map(m => {
+                        const aspect = m.e.pw / m.e.ph;
+                        let h = (m.e.math ? m.e.cssH : (m.h || m.e.ph)) * PXMM;
+                        h = Math.max(1.5, Math.min(h, hMax));
+                        return { e: m.e, w: h * aspect, h };
+                    });
+                    const gap = 0.6;
+                    const total = items.reduce((a, it) => a + it.w, 0) + gap * (items.length - 1);
+                    const maxH = Math.max(...items.map(it => it.h));
+                    c._media = { items, total, maxH, gap, inline: hasText };
+                    c.styles = c.styles || {};
+                    c.styles.minCellHeight = Math.max(c.styles.minCellHeight || 0, maxH + pad * 2 + 0.4);
+                    if (hasText) c.styles.cellPadding = { top: pad, right: pad, bottom: pad, left: pad + total + 1 };
+                    else c.styles.minCellWidth = Math.max(c.styles.minCellWidth || 0, Math.min(total + pad * 2 + 0.6, CW));
+                }
+            }
+        }
+        function drawCellImages(cell) {
+            const L = cell.pdfImgs;
+            if (!L) return;
+            const padL = cell.padding('left'), padR = cell.padding('right'), padT = cell.padding('top'), padB = cell.padding('bottom');
+            let s = 1, x;
+            if (L.inline) x = cell.x + padL - L.total - 1;        // padding kiri sel sudah diperlebar selebar gambar
+            else {
+                s = Math.min(1, (cell.width - padL - padR) / L.total, (cell.height - padT - padB) / L.maxH);
+                if (!(s > 0)) return;
+                x = cell.x + (cell.width - L.total * s) / 2;
+            }
+            L.items.forEach(it => {
+                const w = it.w * s, h = it.h * s;
+                const yy = cell.y + (cell.height - h) / 2;
+                if (L.inline || it.e.math) doc.addImage(it.e.data, it.e.fmt || 'JPEG', x, yy, w, h, it.e.src, 'FAST');
+                else drawImageBox(it.e, x, yy, w, h);
+                x += w + L.gap * s;
+            });
+        }
+
         function runAutoTable(cfg) {
+            sizeCellMedia(cfg);
             const baseStyles = {
                 font: FONT, fontSize: cfg.fontSize, cellPadding: cfg.pad, lineColor: C.line, lineWidth: 0.15,
                 textColor: C.ink, valign: 'middle', overflow: 'linebreak', lineHeight: 1.18
@@ -1392,6 +1594,7 @@
                     const raw = d.cell.raw;
                     const txt = raw && typeof raw === 'object' ? raw.content : raw;
                     d.cell.pdfCanvas = unsupported(String(txt == null ? '' : txt));
+                    if (raw && raw._media) d.cell.pdfImgs = raw._media;
                     if (cfg.onParse) cfg.onParse(d);
                 },
                 willDrawCell(d) {
@@ -1399,6 +1602,7 @@
                 },
                 didDrawCell(d) {
                     if (d.cell.pdfLines) drawCanvasCell(d.cell, d.cell.pdfLines);
+                    if (d.cell.pdfImgs) drawCellImages(d.cell);
                     if (cfg.rowLines) { doc.setDrawColor(...C.line); doc.setLineWidth(0.15); doc.line(d.cell.x, d.cell.y + d.cell.height, d.cell.x + d.cell.width, d.cell.y + d.cell.height); }
                     const raw = d.cell.raw;
                     if (raw && raw.link) doc.link(d.cell.x, d.cell.y, d.cell.width, d.cell.height, { url: raw.link });
@@ -1407,11 +1611,55 @@
             y = doc.lastAutoTable.finalY + 4;
         }
 
+        // buang kolom yang seluruh selnya kosong (placeholder colspan di tabel kisi seperti tabel periodik); sel berwarna/berisi gambar dianggap berisi
+        function pruneEmptyCols(b) {
+            const rows = [...b.head, ...b.body];
+            const cover = [];
+            let maxC = 0;
+            rows.forEach((row, ri) => {
+                cover[ri] = cover[ri] || [];
+                let ci = 0;
+                for (const c of row) {
+                    while (cover[ri][ci]) ci++;
+                    for (let r = 0; r < (c.rowSpan || 1); r++) { cover[ri + r] = cover[ri + r] || []; for (let k = 0; k < c.colSpan; k++) cover[ri + r][ci + k] = c; }
+                    c._ci = ci; ci += c.colSpan;
+                }
+                maxC = Math.max(maxC, ci);
+            });
+            const keep = new Array(maxC).fill(false);
+            for (const row of rows) for (const c of row) {
+                const st = c.styles || {};
+                if (String(c.content || '').trim() || c.imgs || c.link || st.fillColor) for (let k = 0; k < c.colSpan; k++) keep[c._ci + k] = true;
+            }
+            const kept = keep.filter(Boolean).length;
+            if (kept === maxC || !kept) return b.cols;
+            for (const part of ['head', 'body']) {
+                b[part] = b[part].map(row => row.filter(c => {
+                    let n = 0;
+                    for (let k = 0; k < c.colSpan; k++) if (keep[c._ci + k]) n++;
+                    c.colSpan = n;
+                    return n > 0;
+                })).filter(row => row.length);
+            }
+            return kept;
+        }
+
         function drawTable(b) {
+            if (b.cols >= 20) b.cols = pruneEmptyCols(b);
             if (b.caption && b.caption.length) para(b.caption, { size: 8.6, b: true, justify: false, after: 1.6, keep: 30 });
             const n = b.cols;
-            const fontSize = n <= 3 ? 8.8 : n <= 5 ? 8.2 : n <= 7 ? 7.4 : n <= 10 ? 6.6 : n <= 14 ? 5.8 : 5.2;
-            const pad = n <= 5 ? 1.6 : n <= 10 ? 1.1 : 0.8;
+            let fontSize = n <= 3 ? 8.8 : n <= 5 ? 8.2 : n <= 7 ? 7.4 : n <= 10 ? 6.6 : n <= 14 ? 5.8 : 5.2;
+            let pad = n <= 5 ? 1.6 : n <= 10 ? 1.1 : 0.8;
+            if (n >= 16) {
+                // tabel sangat lebar (mis. tabel periodik 18/32 kolom): perkecil font/padding sampai kata terpanjang muat satu kolom
+                pad = n >= 24 ? 0.25 : 0.4;
+                let maxWord = 3;
+                for (const row of [...b.head, ...b.body]) for (const c of row) {
+                    if (c && c.colSpan === 1) for (const w of String(c.content || '').split(/\s+/)) maxWord = Math.max(maxWord, Math.min(w.length, 11));
+                }
+                const colW = CW / n - 2 * pad;
+                fontSize = Math.max(2.6, Math.min(fontSize, colW / (maxWord * 0.52 * 0.3528)));
+            }
             runAutoTable({ fontSize, pad, head: b.head, body: b.body, tableWidth: n <= 4 ? 'wrap' : 'auto' });
         }
 
@@ -1462,7 +1710,7 @@
             const x = PAGE.ml + 3.2 + level * 5.6, tx = x + 4.4;
             list.items.forEach((it, idx) => {
                 const marker = list.ordered ? `${list.start + idx}.` : (level === 0 ? '•' : '–');
-                if (it.runs.length && it.runs.some(r => !r.br && r.text.trim())) {
+                if (it.runs.length && it.runs.some(r => !r.br && (r.math || (r.text || '').trim()))) {
                     para(it.runs, { x: tx, width: CW - (tx - PAGE.ml), marker, markerRight: tx - 1.3, justify: false, after: 0.9 });
                 }
                 it.children.forEach(c => drawList(c, level + 1));
@@ -1757,6 +2005,10 @@
             await tick();
             const parsed = new Parser(html, { host: info.host }).parse();
             const blocks = groupFigures(parsed.blocks), images = parsed.images;
+            if (parsed.maths && parsed.maths.length) {
+                await renderMaths(parsed.maths, signal);
+                ui.log(tr('logMath', { n: parsed.maths.filter(e => e.ok).length }));
+            }
             ui.log(tr('logStruct', { h: blocks.filter(b => b.t === 'h').length, i: images.length, t: blocks.filter(b => b.t === 'table' || b.t === 'infobox').length }));
 
             /* 4. font + gambar */
@@ -1838,7 +2090,13 @@
                         if (b.caption) Object.assign(o, { size: 8, color: C.muted, align: 'center', justify: false });
                         if (b.bold) Object.assign(o, { b: true, keep: 18, after: 0.8 });
                         if (b.indent) Object.assign(o, { x: PAGE.ml + b.indent, width: CW - b.indent, justify: false });
-                        para(b.runs, o);
+                        // rumus display dipisah dari alur teks dan digambar di tengah sebagai blok sendiri
+                        let seg = [];
+                        for (const r of b.runs) {
+                            if (r.math && r.math.block && r.math.ok) { if (seg.length) para(seg, o); drawMathBlock(r.math); seg = []; }
+                            else seg.push(r);
+                        }
+                        if (seg.length) para(seg, o);
                         break;
                     }
                     case 'list': drawList(b, 0); y += 1.6; break;

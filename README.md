@@ -1,6 +1,6 @@
 # Wikipedia-PDF
 
-Turn a Wikipedia article into a neatly laid-out PDF. The PDF is built directly from the article content, not printed from the web page.
+Turn a Wikipedia article into a neat PDF booklet. The PDF is built directly from the article content, not printed from the web page.
 
 **Live:** https://wikipedia-pdf.web.app/
 
@@ -68,7 +68,7 @@ firebase deploy --only hosting
 
 ## Ringkasan (Bahasa Indonesia)
 
-Wikipedia-PDF mengubah artikel Wikipedia menjadi PDF yang tertata, lengkap dengan Daftar Isi berlink, gambar, tabel, infobox, referensi, dan halaman lisensi. Semua diproses di peramban tanpa server. Tempel URL artikel, atau buka lewat query seperti `?url=https://id.wikipedia.org/wiki/Indonesia&lang=id`. Edisi khusus Abstract Wikipedia juga didukung dengan beberapa limitasi (lihat bagian di atas).
+Wikipedia-PDF mengubah artikel Wikipedia menjadi buklet PDF yang rapi, lengkap dengan Daftar Isi berlink, gambar, tabel, infobox, referensi, dan halaman lisensi. Semua diproses di peramban tanpa server. Tempel URL artikel, atau buka lewat query seperti `?url=https://id.wikipedia.org/wiki/Indonesia&lang=id`. Edisi khusus Abstract Wikipedia juga didukung dengan beberapa limitasi (lihat bagian di atas).
 
 ## Author
 
